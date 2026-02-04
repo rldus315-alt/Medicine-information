@@ -321,7 +321,18 @@ function renderSearchResults(results) {
   });
 }
 
+function addToMyMedications(name) {
+  if (!name || !name.trim()) return;
+  if (!myMedications.includes(name.trim())) {
+    myMedications.push(name.trim());
+    saveMedications();
+  }
+}
+
 function showDetail(source, drug) {
+  const drugName = source === 'eyak' ? (drug.itemName || '') : source === 'korean' ? (drug.name || '') : (drug.openfda?.brand_name?.[0] || drug.openfda?.generic_name?.[0] || '');
+  const addToMedBtn = drugName ? `<button class="btn btn-primary add-to-med-btn" data-name="${(drugName + '').replace(/"/g, '&quot;')}">💊 내 복용약에 저장</button>` : '';
+
   if (source === 'eyak') {
     const d = drug;
     const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${d.itemName}" class="drug-image" onerror="this.style.display='none'">` : '';
@@ -336,6 +347,7 @@ function showDetail(source, drug) {
     ].filter(s => s.data && s.data.trim());
     detailContent.innerHTML = `
       <div class="detail-section">
+        ${addToMedBtn}
         ${imgHtml}
         <h3>기본 정보</h3>
         <p><strong>제품명:</strong> ${d.itemName || '-'}</p>
@@ -371,6 +383,7 @@ function showDetail(source, drug) {
       ].filter(s => s.data && s.data.trim());
       detailContent.innerHTML = `
         <div class="detail-section">
+          ${addToMedBtn}
           ${imgHtml}
           <h3>기본 정보</h3>
           <p><strong>제품명:</strong> ${d.name || '-'}</p>
@@ -391,6 +404,7 @@ function showDetail(source, drug) {
     } else {
       detailContent.innerHTML = `
         <div class="detail-section">
+          ${addToMedBtn}
           ${imgHtml}
           <h3>기본 정보</h3>
           <p><strong>품목명:</strong> ${d.name || '-'}</p>
@@ -425,6 +439,7 @@ function showDetail(source, drug) {
     ];
     detailContent.innerHTML = `
       <div class="detail-section">
+        ${addToMedBtn}
         <h3>기본 정보</h3>
         <p><strong>상품명:</strong> ${brand}</p>
         <p><strong>성분명:</strong> ${generic}</p>
@@ -437,6 +452,16 @@ function showDetail(source, drug) {
       `).join('')}
     `;
   }
+  detailContent.querySelectorAll('.add-to-med-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.name;
+      if (name) {
+        addToMyMedications(name);
+        btn.textContent = '✓ 저장됨';
+        btn.disabled = true;
+      }
+    });
+  });
   document.getElementById('viewSearch').classList.remove('active');
   document.getElementById('viewSearch').classList.add('hidden');
   viewDetail.classList.add('active');

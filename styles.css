@@ -133,6 +133,8 @@ body {
   margin-bottom: 1rem;
 }
 
+.add-to-med-btn { margin-bottom: 1rem; display: inline-block; }
+
 .search-results, .pill-results {
   display: flex;
   flex-direction: column;
