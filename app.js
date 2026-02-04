@@ -574,8 +574,8 @@ function renderSearchResults(results) {
 
 function addToMyMedications(name) {
   if (!name || !name.trim()) return;
-  if (!myMedications.includes(name.trim())) {
-    myMedications.push(name.trim());
+  if (!hasMedicationByName(name)) {
+    myMedications.push({ name: name.trim(), dosage: '', notes: '' });
     saveMedications();
   }
 }
@@ -1142,27 +1142,122 @@ const checkMyInteractionsBtn = document.getElementById('checkMyInteractionsBtn')
 
 let myMedications = JSON.parse(localStorage.getItem('myMedications') || '[]');
 
+// 기존 문자열 배열 → 테이블 형식 마이그레이션
+function migrateMedications(data) {
+  if (!Array.isArray(data)) return [];
+  return data.map(m => typeof m === 'string' ? { name: m, dosage: '', notes: '' } : { name: m.name || '', dosage: m.dosage || '', notes: m.notes || '' });
+}
+myMedications = migrateMedications(myMedications);
+
+function getMedicationName(m) {
+  return (typeof m === 'string' ? m : (m && m.name)) || '';
+}
+
+function hasMedicationByName(name) {
+  return myMedications.some(m => getMedicationName(m).toLowerCase() === (name || '').toLowerCase());
+}
+
 function saveMedications() {
   localStorage.setItem('myMedications', JSON.stringify(myMedications));
   renderMedicationList();
 }
 
 function renderMedicationList() {
-  medicationList.innerHTML = myMedications.map((m, i) => `
-    <span class="med-tag">${m} <button data-i="${i}">×</button></span>
+  const tbody = medicationList;
+  const emptyEl = document.getElementById('medicationEmpty');
+  const tableEl = document.getElementById('medicationTable');
+  if (!tbody) return;
+
+  if (myMedications.length === 0) {
+    tbody.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (tableEl) tableEl.style.display = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (tableEl) tableEl.style.display = 'table';
+
+  tbody.innerHTML = myMedications.map((m, i) => `
+    <tr data-i="${i}">
+      <td class="med-num">${i + 1}</td>
+      <td class="med-name-cell"><span class="med-name-text">${(m.name || '').replace(/</g, '&lt;')}</span><input type="text" class="med-edit-input med-name-input" value="${(m.name || '').replace(/"/g, '&quot;')}" style="display:none"></td>
+      <td class="med-dosage-cell"><span class="med-dosage-text">${(m.dosage || '-').replace(/</g, '&lt;')}</span><input type="text" class="med-edit-input med-dosage-input" value="${(m.dosage || '').replace(/"/g, '&quot;')}" placeholder="예: 1일 3회 식후" style="display:none"></td>
+      <td class="med-notes-cell"><span class="med-notes-text">${(m.notes || '-').replace(/</g, '&lt;')}</span><input type="text" class="med-edit-input med-notes-input" value="${(m.notes || '').replace(/"/g, '&quot;')}" placeholder="메모" style="display:none"></td>
+      <td class="med-actions">
+        <button class="btn-med-edit" data-i="${i}" title="수정">✏️</button>
+        <button class="btn-med-save" data-i="${i}" title="저장" style="display:none">✓</button>
+        <button class="btn-med-cancel" data-i="${i}" title="취소" style="display:none">✕</button>
+        <button class="btn-med-del" data-i="${i}" title="삭제">🗑️</button>
+      </td>
+    </tr>
   `).join('');
-  medicationList.querySelectorAll('button').forEach(btn => {
+
+  tbody.querySelectorAll('.btn-med-del').forEach(btn => {
     btn.addEventListener('click', () => {
       myMedications.splice(parseInt(btn.dataset.i), 1);
       saveMedications();
+    });
+  });
+
+  tbody.querySelectorAll('.btn-med-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.i);
+      const row = tbody.querySelector(`tr[data-i="${i}"]`);
+      if (!row) return;
+      row.classList.add('editing');
+      row.querySelectorAll('.med-name-text, .med-dosage-text, .med-notes-text').forEach(el => el.style.display = 'none');
+      row.querySelectorAll('.med-name-input, .med-dosage-input, .med-notes-input').forEach(el => { el.style.display = 'block'; el.focus(); });
+      row.querySelector('.btn-med-edit').style.display = 'none';
+      row.querySelector('.btn-med-save').style.display = 'inline-block';
+      row.querySelector('.btn-med-cancel').style.display = 'inline-block';
+    });
+  });
+
+  tbody.querySelectorAll('.btn-med-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.i);
+      const row = tbody.querySelector(`tr[data-i="${i}"]`);
+      if (!row || !myMedications[i]) return;
+      const nameInput = row.querySelector('.med-name-input');
+      const dosageInput = row.querySelector('.med-dosage-input');
+      const notesInput = row.querySelector('.med-notes-input');
+      myMedications[i] = {
+        name: (nameInput && nameInput.value || '').trim() || myMedications[i].name,
+        dosage: (dosageInput && dosageInput.value || '').trim(),
+        notes: (notesInput && notesInput.value || '').trim()
+      };
+      row.classList.remove('editing');
+      row.querySelectorAll('.med-name-text, .med-dosage-text, .med-notes-text').forEach(el => el.style.display = '');
+      row.querySelectorAll('.med-name-input, .med-dosage-input, .med-notes-input').forEach(el => el.style.display = 'none');
+      row.querySelector('.btn-med-edit').style.display = 'inline-block';
+      row.querySelector('.btn-med-save').style.display = 'none';
+      row.querySelector('.btn-med-cancel').style.display = 'none';
+      saveMedications();
+    });
+  });
+
+  tbody.querySelectorAll('.btn-med-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.i);
+      const row = tbody.querySelector(`tr[data-i="${i}"]`);
+      if (!row) return;
+      row.classList.remove('editing');
+      row.querySelector('.med-name-input').value = myMedications[i].name || '';
+      row.querySelector('.med-dosage-input').value = myMedications[i].dosage || '';
+      row.querySelector('.med-notes-input').value = myMedications[i].notes || '';
+      row.querySelectorAll('.med-name-text, .med-dosage-text, .med-notes-text').forEach(el => el.style.display = '');
+      row.querySelectorAll('.med-name-input, .med-dosage-input, .med-notes-input').forEach(el => el.style.display = 'none');
+      row.querySelector('.btn-med-edit').style.display = 'inline-block';
+      row.querySelector('.btn-med-save').style.display = 'none';
+      row.querySelector('.btn-med-cancel').style.display = 'none';
     });
   });
 }
 
 addMedicationBtn.addEventListener('click', () => {
   const name = medicationInput.value.trim();
-  if (name && !myMedications.includes(name)) {
-    myMedications.push(name);
+  if (name && !hasMedicationByName(name)) {
+    myMedications.push({ name, dosage: '', notes: '' });
     saveMedications();
     medicationInput.value = '';
   }
@@ -1193,8 +1288,8 @@ function initMedicationAutocomplete() {
         if (!term) return;
         medicationSuggestions.classList.remove('visible');
         medicationSuggestions.innerHTML = '';
-        if (!myMedications.includes(term)) {
-          myMedications.push(term);
+        if (!hasMedicationByName(term)) {
+          myMedications.push({ name: term, dosage: '', notes: '' });
           saveMedications();
         }
         medicationInput.value = '';
@@ -1227,7 +1322,7 @@ function initMedicationAutocomplete() {
 initMedicationAutocomplete();
 
 checkMyInteractionsBtn.addEventListener('click', () => {
-  interactionDrugs = [...myMedications];
+  interactionDrugs = myMedications.map(m => getMedicationName(m));
   renderInteractionList();
   document.querySelector('[data-view="interaction"]').click();
   setTimeout(() => checkInteractionBtn.click(), 100);
@@ -1243,17 +1338,17 @@ checkAllergyBtn.addEventListener('click', () => {
   const allergyKey = Object.keys(ALLERGY_INGREDIENTS).find(k => k.toLowerCase().includes(allergy.toLowerCase()) || allergy.toLowerCase().includes(k.toLowerCase()));
   const group = allergyKey ? ALLERGY_INGREDIENTS[allergyKey] : null;
   if (!group) {
-    const found = myMedications.filter(m => m.toLowerCase().includes(allergy.toLowerCase()) || allergy.toLowerCase().includes(m.toLowerCase()));
+    const found = myMedications.filter(m => getMedicationName(m).toLowerCase().includes(allergy.toLowerCase()) || allergy.toLowerCase().includes(getMedicationName(m).toLowerCase()));
     if (found.length > 0) {
-      alert(`⚠️ 알레르기 주의: "${found.join(', ')}"에 "${allergy}" 성분이 포함될 수 있습니다. 의사와 상담하세요.`);
+      alert(`⚠️ 알레르기 주의: "${found.map(m => getMedicationName(m)).join(', ')}"에 "${allergy}" 성분이 포함될 수 있습니다. 의사와 상담하세요.`);
     } else {
       alert('저장된 약 목록에서 해당 알레르기 성분이 발견되지 않았습니다. 등록된 알레르기 그룹: 페니실린, 설폰아마이드, 아스피린, 세팔로스포린');
     }
     return;
   }
-  const found = myMedications.filter(m => group.some(g => m.toLowerCase().includes(g.toLowerCase()) || g.toLowerCase().includes(m.toLowerCase())));
+  const found = myMedications.filter(m => group.some(g => getMedicationName(m).toLowerCase().includes(g.toLowerCase()) || g.toLowerCase().includes(getMedicationName(m).toLowerCase())));
   if (found.length > 0) {
-    alert(`⚠️ 알레르기 주의: ${found.join(', ')}에 ${allergyKey} 계열 성분이 포함될 수 있습니다. 반드시 의사와 상담하세요.`);
+    alert(`⚠️ 알레르기 주의: ${found.map(m => getMedicationName(m)).join(', ')}에 ${allergyKey} 계열 성분이 포함될 수 있습니다. 반드시 의사와 상담하세요.`);
   } else {
     alert('저장된 약 목록에서 해당 알레르기 성분이 발견되지 않았습니다.');
   }

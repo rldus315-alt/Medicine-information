@@ -267,14 +267,14 @@ body {
 .medication-suggestions.visible,
 .interaction-suggestions.visible { display: block; }
 
-.drug-list, .medication-list {
+.drug-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
 
-.drug-tag, .med-tag {
+.drug-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -285,13 +285,89 @@ body {
   font-size: 0.9rem;
 }
 
-.drug-tag button, .med-tag button {
+.drug-tag button {
   background: none;
   border: none;
   color: white;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
+}
+
+/* 내 복용약 테이블 */
+.medication-table-wrapper {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--card);
+}
+
+.medication-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.medication-table th,
+.medication-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.medication-table th {
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.medication-table tbody tr:hover {
+  background: var(--bg);
+}
+
+.medication-table tbody tr.editing {
+  background: var(--primary-light);
+}
+
+.medication-table .med-num { width: 48px; text-align: center; color: var(--text-muted); }
+.medication-table .med-name-cell { min-width: 100px; }
+.medication-table .med-dosage-cell { min-width: 120px; }
+.medication-table .med-notes-cell { min-width: 80px; }
+.medication-table .med-actions { width: 100px; }
+
+.med-edit-input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.btn-med-edit, .btn-med-save, .btn-med-cancel, .btn-med-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.btn-med-edit:hover, .btn-med-save:hover, .btn-med-del:hover { opacity: 1; }
+.btn-med-save { color: var(--success); }
+.btn-med-cancel { color: var(--text-muted); }
+.btn-med-del { color: var(--danger); }
+
+.medication-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
 }
 
 .pill-form, .interaction-result {

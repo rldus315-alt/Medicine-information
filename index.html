@@ -121,7 +121,21 @@
           </div>
           <div class="medication-suggestions" id="medicationSuggestions"></div>
         </div>
-        <div class="medication-list" id="medicationList"></div>
+        <div class="medication-table-wrapper">
+          <table class="medication-table" id="medicationTable">
+            <thead>
+              <tr>
+                <th>번호</th>
+                <th>의약품명</th>
+                <th>복용법</th>
+                <th>비고</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="medicationList"></tbody>
+          </table>
+          <p class="medication-empty" id="medicationEmpty">등록된 약이 없습니다. 위에서 의약품을 검색해 추가하세요.</p>
+        </div>
         <div class="medication-actions">
           <button class="btn btn-secondary" id="checkAllergyBtn">알레르기 검사</button>
           <button class="btn btn-secondary" id="checkMyInteractionsBtn">상호작용 검사</button>
