@@ -184,8 +184,8 @@
         <div class="pharmacy-form">
           <p class="pharmacy-api-notice hidden" id="pharmacyApiNotice">일반 약국 검색은 API 키가 필요합니다. <strong>심야운영약국(680곳)</strong>은 API 없이 바로 사용할 수 있습니다.</p>
           <div class="form-group pharmacy-mode-row">
-            <label><input type="radio" name="pharmacyMode" value="api"> 일반 약국 (API)</label>
-            <label><input type="radio" name="pharmacyMode" value="night" checked> 심야운영약국 (680곳)</label>
+            <label><input type="radio" name="pharmacyMode" value="api" checked> 일반 약국 (1,700곳)</label>
+            <label><input type="radio" name="pharmacyMode" value="night"> 심야운영약국 (680곳)</label>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -252,7 +252,9 @@
   </script>
   <script src="data.js?v=2"></script>
   <script src="night-pharmacy-data.js?v=2"></script>
+  <script src="pharmacy-data.js?v=2"></script>
   <script>if(typeof NIGHT_PHARMACY==='undefined'){var NIGHT_PHARMACY=[];}</script>
+  <script>if(typeof PHARMACY_DATA==='undefined'){var PHARMACY_DATA=[];}</script>
   <script src="korean-drugs.js"></script>
   <script>if(typeof KOREAN_DRUG_DATABASE==='undefined'){var KOREAN_DRUG_DATABASE=[];}</script>
   <script src="app.js?v=2"></script>

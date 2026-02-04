@@ -271,7 +271,7 @@ const FDA_API = 'https://api.fda.gov/drug/label.json';
 // e약은요 API (공공데이터포털)
 const EYAK_API = 'http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
 // 국립중앙의료원 전국 약국 정보 조회 API
-const PHARMACY_API = 'http://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire';
+const PHARMACY_API = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire';
 const CORS_PROXIES = [
   (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
   (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u)
@@ -1595,18 +1595,10 @@ function initPharmacy() {
   const resultsEl = document.getElementById('pharmacyResults');
   if (!sidoSelect || !sigugunSelect || !searchBtn || !resultsEl) return;
 
-  const pharmacyKey = (typeof DATA_GO_KR_PHARMACY_API_KEY !== 'undefined' && DATA_GO_KR_PHARMACY_API_KEY) ? DATA_GO_KR_PHARMACY_API_KEY.trim() : '';
-  const commonKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
-  const hasApiKey = !!(pharmacyKey || commonKey);
+  const hasEmbeddedData = typeof PHARMACY_DATA !== 'undefined' && Array.isArray(PHARMACY_DATA) && PHARMACY_DATA.length > 0;
   const apiNotice = document.getElementById('pharmacyApiNotice');
-  const apiRadio = document.querySelector('input[name="pharmacyMode"][value="api"]');
-  const nightRadio = document.querySelector('input[name="pharmacyMode"][value="night"]');
-  if (!hasApiKey && apiNotice) {
-    apiNotice.classList.remove('hidden');
-    if (nightRadio) nightRadio.checked = true;
-  } else if (apiNotice) {
-    apiNotice.classList.add('hidden');
-  }
+  if (!hasEmbeddedData && apiNotice) apiNotice.classList.remove('hidden');
+  else if (apiNotice) apiNotice.classList.add('hidden');
 
   if (typeof SIDO_SIGUGUN !== 'undefined') {
     Object.keys(SIDO_SIGUGUN).forEach(sido => {
@@ -1658,6 +1650,22 @@ function initPharmacy() {
     return list;
   }
 
+  function filterPharmacyData(Q0, Q1, QN) {
+    if (typeof PHARMACY_DATA === 'undefined' || !Array.isArray(PHARMACY_DATA)) return [];
+    let list = PHARMACY_DATA;
+    if (Q0) {
+      list = list.filter(p => (p.dutyAddr || '').indexOf(Q0) >= 0);
+    }
+    if (Q1) {
+      list = list.filter(p => (p.dutyAddr || '').indexOf(Q1) >= 0);
+    }
+    if (QN) {
+      const q = QN.toLowerCase();
+      list = list.filter(p => (p.dutyName || '').toLowerCase().indexOf(q) >= 0);
+    }
+    return list;
+  }
+
   searchBtn.addEventListener('click', async () => {
     const Q0 = sidoSelect.value.trim();
     const Q1 = sigugunSelect.value.trim();
@@ -1690,6 +1698,27 @@ function initPharmacy() {
       }).join('');
       const more = items.length > 50 ? `<p class="pharmacy-more">외 ${items.length - 50}곳 (상위 50곳만 표시)</p>` : '';
       resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">심야운영약국 680곳 (E-GEN·대한약사회, 2026-02 갱신). 방문 전 전화 확인 권장.</p>';
+      return;
+    }
+
+    const embeddedItems = filterPharmacyData(Q0, Q1, QN);
+    if (embeddedItems.length > 0) {
+      const cardsHtml = embeddedItems.slice(0, 50).map((item, i) => {
+        const name = item.dutyName || '-';
+        const addr = item.dutyAddr || '-';
+        const tel = item.dutyTel1 || '-';
+        const hours = formatAllPharmacyHours(item);
+        return `
+          <div class="pharmacy-card" data-i="${i}">
+            <h3 class="pharmacy-name">${(name+'').replace(/</g, '&lt;')}</h3>
+            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
+            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
+            <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
+          </div>
+        `;
+      }).join('');
+      const more = embeddedItems.length > 50 ? `<p class="pharmacy-more">외 ${embeddedItems.length - 50}곳 (상위 50곳만 표시)</p>` : '';
+      resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">전국 약국 1,700곳 (공공데이터). 방문 전 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
       return;
     }
 
