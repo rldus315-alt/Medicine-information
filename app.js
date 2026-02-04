@@ -494,6 +494,37 @@ function chosungMatch(str, query) {
   return strChosung.indexOf(q) === 0 || strChosung.includes(q);
 }
 
+function getDrugSuggestions(query) {
+  if (!query.trim()) return [];
+  const q = query.trim().toLowerCase();
+  const qChosung = q.length === 1 && CHOSUNG.includes(q);
+  const sources = [];
+  if (typeof PILL_DATABASE !== 'undefined') {
+    PILL_DATABASE.forEach(p => sources.push({ name: p.name, ingredient: p.ingredient }));
+  }
+  POPULAR_TERMS.forEach(t => sources.push({ name: t }));
+  if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
+    KOREAN_DRUG_DATABASE.forEach(d => sources.push({ name: d.name, nameEn: d.nameEn, ingredient: d.ingredient }));
+  }
+  const matches = [];
+  const seen = new Set();
+  for (const s of sources) {
+    const name = (s.name || '').toLowerCase();
+    const nameEn = (s.nameEn || '').toLowerCase();
+    const ingredient = (s.ingredient || '').toLowerCase();
+    const match = name.includes(q) || nameEn.includes(q) || ingredient.includes(q) ||
+      chosungMatch(name, q) || (qChosung && getChosung(name[0]) === q);
+    if (match && name && !seen.has(name)) {
+      seen.add(name);
+      let score = name === q ? 100 : name.startsWith(q) ? 80 : name.includes(q) ? 60 : chosungMatch(name, q) ? 50 : 40;
+      if (POPULAR_TERMS.includes(s.name)) score += 15;
+      matches.push({ name: s.name, score });
+    }
+  }
+  matches.sort((a, b) => b.score - a.score);
+  return matches.slice(0, 8).map(m => ({ name: m.name }));
+}
+
 // 검색어 추천 (자동완성 - 초성/부분일치, 정확·시작일치 우선)
 function initAutocomplete() {
   const searchSuggestions = document.getElementById('searchSuggestions');
@@ -502,37 +533,6 @@ function initAutocomplete() {
 
   searchSuggestions.classList.remove('visible');
   searchSuggestions.innerHTML = '';
-
-  function getSuggestions(query) {
-    if (!query.trim()) return [];
-    const q = query.trim().toLowerCase();
-    const qChosung = q.length === 1 && CHOSUNG.includes(q);
-    const sources = [];
-    if (typeof PILL_DATABASE !== 'undefined') {
-      PILL_DATABASE.forEach(p => sources.push({ name: p.name, ingredient: p.ingredient, fromPill: true }));
-    }
-    POPULAR_TERMS.forEach(t => sources.push({ name: t, fromPill: true }));
-    if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
-      KOREAN_DRUG_DATABASE.forEach(d => sources.push({ name: d.name, nameEn: d.nameEn, ingredient: d.ingredient, fromPill: false }));
-    }
-    const matches = [];
-    const seen = new Set();
-    for (const s of sources) {
-      const name = (s.name || '').toLowerCase();
-      const nameEn = (s.nameEn || '').toLowerCase();
-      const ingredient = (s.ingredient || '').toLowerCase();
-      const match = name.includes(q) || nameEn.includes(q) || ingredient.includes(q) ||
-        chosungMatch(name, q) || (qChosung && getChosung(name[0]) === q);
-      if (match && name && !seen.has(name)) {
-        seen.add(name);
-        let score = name === q ? 100 : name.startsWith(q) ? 80 : name.includes(q) ? 60 : chosungMatch(name, q) ? 50 : 40;
-        if (POPULAR_TERMS.includes(s.name)) score += 15;
-        matches.push({ name: s.name, score });
-      }
-    }
-    matches.sort((a, b) => b.score - a.score);
-    return matches.slice(0, 8).map(m => ({ name: m.name }));
-  }
 
   function getQuickTerms() {
     const recent = getRecentSearches();
@@ -585,13 +585,13 @@ function initAutocomplete() {
       searchSuggestions.innerHTML = '';
       return;
     }
-    suggestTimeout = setTimeout(() => showSuggestions(getSuggestions(q)), 120);
+    suggestTimeout = setTimeout(() => showSuggestions(getDrugSuggestions(q)), 120);
   });
 
   searchInput.addEventListener('focus', () => {
     const q = searchInput.value.trim();
     if (q) {
-      showSuggestions(getSuggestions(q));
+      showSuggestions(getDrugSuggestions(q));
     } else {
       searchSuggestions.classList.remove('visible');
       searchSuggestions.innerHTML = '';
@@ -747,6 +747,64 @@ addMedicationBtn.addEventListener('click', () => {
     medicationInput.value = '';
   }
 });
+
+// 내 복용약 입력 자동완성
+function initMedicationAutocomplete() {
+  const medicationSuggestions = document.getElementById('medicationSuggestions');
+  if (!medicationSuggestions || !medicationInput) return;
+  let medSuggestTimeout = null;
+  medicationSuggestions.classList.remove('visible');
+  medicationSuggestions.innerHTML = '';
+
+  function showMedSuggestions(items) {
+    if (!items.length) {
+      medicationSuggestions.classList.remove('visible');
+      medicationSuggestions.innerHTML = '';
+      return;
+    }
+    medicationSuggestions.innerHTML = items.map(d => `
+      <div class="suggestion-item" data-name="${(d.name || '').replace(/"/g, '&quot;')}">${d.name || '-'}</div>
+    `).join('');
+    medicationSuggestions.classList.add('visible');
+    medicationSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const term = el.dataset.name;
+        if (!term) return;
+        medicationSuggestions.classList.remove('visible');
+        medicationSuggestions.innerHTML = '';
+        if (!myMedications.includes(term)) {
+          myMedications.push(term);
+          saveMedications();
+        }
+        medicationInput.value = '';
+      });
+    });
+  }
+
+  medicationInput.addEventListener('input', () => {
+    clearTimeout(medSuggestTimeout);
+    const q = medicationInput.value.trim();
+    if (!q) {
+      medicationSuggestions.classList.remove('visible');
+      medicationSuggestions.innerHTML = '';
+      return;
+    }
+    medSuggestTimeout = setTimeout(() => showMedSuggestions(getDrugSuggestions(q)), 120);
+  });
+  medicationInput.addEventListener('focus', () => {
+    const q = medicationInput.value.trim();
+    if (q) showMedSuggestions(getDrugSuggestions(q));
+    else {
+      medicationSuggestions.classList.remove('visible');
+      medicationSuggestions.innerHTML = '';
+    }
+  });
+  medicationInput.addEventListener('blur', () => {
+    setTimeout(() => medicationSuggestions.classList.remove('visible'), 200);
+  });
+}
+initMedicationAutocomplete();
 
 checkMyInteractionsBtn.addEventListener('click', () => {
   interactionDrugs = [...myMedications];

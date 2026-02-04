@@ -181,6 +181,23 @@ body {
 
 .interaction-input, .medication-input { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
 
+.medication-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+}
+.medication-suggestions.visible { display: block; }
+
 .drug-list, .medication-list {
   display: flex;
   flex-wrap: wrap;
