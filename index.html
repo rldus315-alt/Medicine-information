@@ -22,18 +22,18 @@
     <header class="header">
       <h1 class="logo">💊 의약품 정보</h1>
       <nav class="nav">
-        <button class="nav-btn active" data-view="search">검색</button>
+        <button class="nav-btn active" data-view="profile">건강정보</button>
+        <button class="nav-btn" data-view="search">검색</button>
         <button class="nav-btn" data-view="interaction">상호작용</button>
         <button class="nav-btn" data-view="pill">알약 식별</button>
         <button class="nav-btn" data-view="medications">내 복용약</button>
-        <button class="nav-btn" data-view="profile">건강정보</button>
         <button class="nav-btn" data-view="glossary">용어사전</button>
       </nav>
     </header>
 
     <main class="main">
       <!-- 검색 뷰 -->
-      <section class="view view-search active" id="viewSearch">
+      <section class="view view-search hidden" id="viewSearch">
         <div class="search-box-wrapper">
           <div class="search-box">
             <input type="text" id="searchInput" placeholder="의약품명 검색 (예: 타이레놀, 게보린, 판콜, 아스피린...)" autocomplete="off">
@@ -145,7 +145,7 @@
       </section>
 
       <!-- 건강정보 뷰 (개인별 금기 알림) -->
-      <section class="view view-profile hidden" id="viewProfile">
+      <section class="view view-profile active" id="viewProfile">
         <h2>건강 정보</h2>
         <p class="subtitle">기저 질환·알레르기·임신 여부를 입력하면 약물 검색 시 맞춤 경고가 표시됩니다</p>
         <div class="profile-form">
