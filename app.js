@@ -478,32 +478,60 @@ searchInput.addEventListener('keypress', e => {
   }
 });
 
-// 검색어 추천 (자동완성만 - 빈 입력 시 추천 없음)
+// 한글 초성 (ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ)
+const CHOSUNG = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+function getChosung(ch) {
+  const c = ch.charCodeAt(0);
+  if (c >= 0xAC00 && c <= 0xD7A3) return CHOSUNG[Math.floor((c - 0xAC00) / 588)];
+  if (CHOSUNG.includes(ch)) return ch;
+  return null;
+}
+function chosungMatch(str, query) {
+  if (!str || !query) return false;
+  const q = query.trim();
+  if (!CHOSUNG.includes(q[0])) return false;
+  const strChosung = str.split('').map(c => getChosung(c)).filter(Boolean).join('');
+  return strChosung.indexOf(q) === 0 || strChosung.includes(q);
+}
+
+// 검색어 추천 (자동완성 - 초성/부분일치, 정확·시작일치 우선)
 function initAutocomplete() {
   const searchSuggestions = document.getElementById('searchSuggestions');
   if (!searchSuggestions) return;
   let suggestTimeout = null;
 
-  // 초기화: 추천 숨김 (빈 상태에서 표시 방지)
   searchSuggestions.classList.remove('visible');
   searchSuggestions.innerHTML = '';
 
   function getSuggestions(query) {
-    if (!query.trim() || typeof KOREAN_DRUG_DATABASE === 'undefined') return [];
+    if (!query.trim()) return [];
     const q = query.trim().toLowerCase();
-    const matches = KOREAN_DRUG_DATABASE.filter(d => {
-      const name = (d.name || '').toLowerCase();
-      const nameEn = (d.nameEn || '').toLowerCase();
-      const ingredient = (d.ingredient || '').toLowerCase();
-      return name.includes(q) || nameEn.includes(q) || ingredient.includes(q);
-    });
+    const qChosung = q.length === 1 && CHOSUNG.includes(q);
+    const sources = [];
+    if (typeof PILL_DATABASE !== 'undefined') {
+      PILL_DATABASE.forEach(p => sources.push({ name: p.name, ingredient: p.ingredient, fromPill: true }));
+    }
+    POPULAR_TERMS.forEach(t => sources.push({ name: t, fromPill: true }));
+    if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
+      KOREAN_DRUG_DATABASE.forEach(d => sources.push({ name: d.name, nameEn: d.nameEn, ingredient: d.ingredient, fromPill: false }));
+    }
+    const matches = [];
     const seen = new Set();
-    return matches.filter(d => {
-      const key = (d.name || '').trim();
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, 8);
+    for (const s of sources) {
+      const name = (s.name || '').toLowerCase();
+      const nameEn = (s.nameEn || '').toLowerCase();
+      const ingredient = (s.ingredient || '').toLowerCase();
+      const match = name.includes(q) || nameEn.includes(q) || ingredient.includes(q) ||
+        chosungMatch(name, q) || (qChosung && getChosung(name[0]) === q);
+      if (match && name && !seen.has(name)) {
+        seen.add(name);
+        let score = name === q ? 100 : name.startsWith(q) ? 80 : name.includes(q) ? 60 : chosungMatch(name, q) ? 50 : 40;
+        if (POPULAR_TERMS.includes(s.name)) score += 15;
+        matches.push({ name: s.name, score });
+      }
+    }
+    matches.sort((a, b) => b.score - a.score);
+    return matches.slice(0, 8).map(m => ({ name: m.name }));
   }
 
   function getQuickTerms() {
