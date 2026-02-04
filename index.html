@@ -32,6 +32,38 @@
     </header>
 
     <main class="main">
+      <!-- 건강정보 뷰 (개인별 금기 알림) - 첫 화면 -->
+      <section class="view view-profile active" id="viewProfile">
+        <h2>건강 정보</h2>
+        <p class="subtitle">기저 질환·알레르기·임신 여부를 입력하면 약물 검색 시 맞춤 경고가 표시됩니다</p>
+        <div class="profile-form">
+          <div class="form-group">
+            <label>기저 질환 (복수 선택 가능)</label>
+            <div class="profile-checkboxes">
+              <label><input type="checkbox" name="condition" value="당뇨"> 당뇨</label>
+              <label><input type="checkbox" name="condition" value="고혈압"> 고혈압</label>
+              <label><input type="checkbox" name="condition" value="신장질환"> 신장질환</label>
+              <label><input type="checkbox" name="condition" value="간질환"> 간질환</label>
+              <label><input type="checkbox" name="condition" value="위궤양"> 위궤양/위장질환</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>알레르기 이력</label>
+            <input type="text" id="profileAllergy" placeholder="예: 페니실린, 아스피린 (쉼표로 구분)">
+          </div>
+          <div class="form-group">
+            <label>임신·수유 여부</label>
+            <select id="profilePregnancy">
+              <option value="">해당 없음</option>
+              <option value="임신">임신 중</option>
+              <option value="수유">수유 중</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" id="saveProfileBtn">저장</button>
+        </div>
+        <p class="profile-saved-msg" id="profileSavedMsg"></p>
+      </section>
+
       <!-- 검색 뷰 -->
       <section class="view view-search hidden" id="viewSearch">
         <div class="search-box-wrapper">
@@ -142,38 +174,6 @@
           <button class="btn btn-secondary" id="checkAllergyBtn">알레르기 검사</button>
           <button class="btn btn-secondary" id="checkMyInteractionsBtn">상호작용 검사</button>
         </div>
-      </section>
-
-      <!-- 건강정보 뷰 (개인별 금기 알림) -->
-      <section class="view view-profile active" id="viewProfile">
-        <h2>건강 정보</h2>
-        <p class="subtitle">기저 질환·알레르기·임신 여부를 입력하면 약물 검색 시 맞춤 경고가 표시됩니다</p>
-        <div class="profile-form">
-          <div class="form-group">
-            <label>기저 질환 (복수 선택 가능)</label>
-            <div class="profile-checkboxes">
-              <label><input type="checkbox" name="condition" value="당뇨"> 당뇨</label>
-              <label><input type="checkbox" name="condition" value="고혈압"> 고혈압</label>
-              <label><input type="checkbox" name="condition" value="신장질환"> 신장질환</label>
-              <label><input type="checkbox" name="condition" value="간질환"> 간질환</label>
-              <label><input type="checkbox" name="condition" value="위궤양"> 위궤양/위장질환</label>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>알레르기 이력</label>
-            <input type="text" id="profileAllergy" placeholder="예: 페니실린, 아스피린 (쉼표로 구분)">
-          </div>
-          <div class="form-group">
-            <label>임신·수유 여부</label>
-            <select id="profilePregnancy">
-              <option value="">해당 없음</option>
-              <option value="임신">임신 중</option>
-              <option value="수유">수유 중</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" id="saveProfileBtn">저장</button>
-        </div>
-        <p class="profile-saved-msg" id="profileSavedMsg"></p>
       </section>
 
       <!-- 용어 사전 뷰 -->
