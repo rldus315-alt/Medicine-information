@@ -1537,8 +1537,10 @@ function formatAllPharmacyHours(item) {
 }
 
 async function fetchPharmacyList(params) {
-  const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
-  if (!apiKey) return { items: [], total: 0, error: '공공데이터 API 키가 필요합니다. config.js에 DATA_GO_KR_API_KEY를 설정하세요.' };
+  const pharmacyKey = (typeof DATA_GO_KR_PHARMACY_API_KEY !== 'undefined' && DATA_GO_KR_PHARMACY_API_KEY) ? DATA_GO_KR_PHARMACY_API_KEY.trim() : '';
+  const commonKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
+  const apiKey = pharmacyKey || commonKey;
+  if (!apiKey) return { items: [], total: 0, error: '공공데이터 API 키가 필요합니다. config.js에 DATA_GO_KR_PHARMACY_API_KEY 또는 DATA_GO_KR_API_KEY를 설정하세요.' };
   const q = new URLSearchParams({
     serviceKey: apiKey,
     pageNo: String(params.pageNo || 1),
@@ -1642,7 +1644,7 @@ function initPharmacy() {
       resultsEl.innerHTML = '<p class="pharmacy-empty">해당 지역에 검색된 약국이 없습니다.</p>';
       return;
     }
-    resultsEl.innerHTML = items.map((item, i) => {
+    const cardsHtml = items.map((item, i) => {
       const name = item.dutyName || item.dutyname || item.DUTYNAME || '-';
       const addr = item.dutyAddr || item.dutyaddr || item.DUTYADDR || '-';
       const tel = item.dutyTel1 || item.dutytel1 || item.DUTYTEL1 || '-';
@@ -1656,6 +1658,7 @@ function initPharmacy() {
         </div>
       `;
     }).join('');
+    resultsEl.innerHTML = cardsHtml + '<p class="pharmacy-source-note">운영시간 변동 가능. 방문 전 약국에 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
   });
 }
 initPharmacy();

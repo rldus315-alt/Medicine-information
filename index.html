@@ -180,6 +180,7 @@
       <section class="view view-pharmacy hidden" id="viewPharmacy">
         <h2>근처 약국 &amp; 약국 정보</h2>
         <p class="subtitle">지역을 선택하거나 약국명을 검색하면 영업시간과 함께 약국 정보를 확인할 수 있습니다</p>
+        <p class="pharmacy-source">데이터: <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN(국립중앙의료원)</a> · 대한약사회 제공</p>
         <div class="pharmacy-form">
           <div class="form-row">
             <div class="form-group">
@@ -213,6 +214,11 @@
             </select>
           </div>
           <button class="btn btn-primary" id="searchPharmacyBtn">약국 검색</button>
+        </div>
+        <div class="pharmacy-egen-links">
+          <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do?searchType=map" target="_blank" rel="noopener" class="btn btn-secondary">🗺️ E-GEN 지도에서 약국 찾기</a>
+          <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do?searchType=general" target="_blank" rel="noopener" class="btn btn-secondary">📋 E-GEN 일반 검색</a>
+          <a href="https://www.e-gen.or.kr/nemc/notice_view.do?brdctsno=12461" target="_blank" rel="noopener" class="btn btn-secondary">🌙 심야운영약국 목록</a>
         </div>
         <div class="pharmacy-results" id="pharmacyResults"></div>
       </section>
@@ -248,7 +254,10 @@
   </div>
 
   <script src="config.js?v=2"></script>
-  <script>if(typeof DATA_GO_KR_API_KEY==='undefined'){var DATA_GO_KR_API_KEY='';}</script>
+  <script>
+    if(typeof DATA_GO_KR_API_KEY==='undefined'){var DATA_GO_KR_API_KEY='';}
+    if(typeof DATA_GO_KR_PHARMACY_API_KEY==='undefined'){var DATA_GO_KR_PHARMACY_API_KEY='';}
+  </script>
   <script src="data.js?v=2"></script>
   <script src="korean-drugs.js"></script>
   <script>if(typeof KOREAN_DRUG_DATABASE==='undefined'){var KOREAN_DRUG_DATABASE=[];}</script>

@@ -612,6 +612,36 @@ body {
   font-size: 0.95rem;
 }
 
+.pharmacy-source {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.pharmacy-source a { color: var(--primary); text-decoration: none; }
+.pharmacy-source a:hover { text-decoration: underline; }
+
+.pharmacy-egen-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.pharmacy-egen-links .btn {
+  margin-top: 0;
+  font-size: 0.9rem;
+  padding: 0.6rem 1rem;
+}
+
+.pharmacy-source-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.pharmacy-source-note a { color: var(--primary); text-decoration: none; }
+.pharmacy-source-note a:hover { text-decoration: underline; }
+
 /* 용어 사전 툴팁 */
 .term-tooltip {
   border-bottom: 1px dotted var(--primary);
