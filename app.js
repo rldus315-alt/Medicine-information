@@ -1625,15 +1625,70 @@ function initPharmacy() {
     }
   });
 
+  function formatNightPharmacyHours(p) {
+    const days = [
+      { k: 'mon', l: '월' }, { k: 'tue', l: '화' }, { k: 'wed', l: '수' }, { k: 'thu', l: '목' },
+      { k: 'fri', l: '금' }, { k: 'sat', l: '토' }, { k: 'sun', l: '일' }, { k: 'holiday', l: '공휴일' }
+    ];
+    const parts = days.map(d => {
+      const v = (p[d.k] || '').trim();
+      return v ? `${d.l}: ${v}` : null;
+    }).filter(Boolean);
+    return parts.length ? parts.join(' | ') : '영업시간 정보 없음';
+  }
+
+  function filterNightPharmacies(Q0, Q1, QN) {
+    if (typeof NIGHT_PHARMACY === 'undefined' || !Array.isArray(NIGHT_PHARMACY)) return [];
+    let list = NIGHT_PHARMACY;
+    if (Q0) {
+      list = list.filter(p => (p.addr || '').indexOf(Q0) >= 0 || (p.addr2 || '').indexOf(Q0) >= 0);
+    }
+    if (Q1) {
+      list = list.filter(p => (p.addr || '').indexOf(Q1) >= 0 || (p.addr2 || '').indexOf(Q1) >= 0);
+    }
+    if (QN) {
+      const q = QN.toLowerCase();
+      list = list.filter(p => (p.name || '').toLowerCase().indexOf(q) >= 0);
+    }
+    return list;
+  }
+
   searchBtn.addEventListener('click', async () => {
     const Q0 = sidoSelect.value.trim();
     const Q1 = sigugunSelect.value.trim();
     const QN = document.getElementById('pharmacyName')?.value.trim() || '';
     const QT = pharmacyDay?.value || '1';
+    const mode = document.querySelector('input[name="pharmacyMode"]:checked')?.value || 'api';
+
     if (!Q0) {
       resultsEl.innerHTML = '<p class="pharmacy-empty">시·도를 선택해 주세요.</p>';
       return;
     }
+
+    if (mode === 'night') {
+      const items = filterNightPharmacies(Q0, Q1, QN);
+      if (items.length === 0) {
+        resultsEl.innerHTML = '<p class="pharmacy-empty">해당 지역에 심야운영약국이 없습니다.</p>';
+        return;
+      }
+      const cardsHtml = items.slice(0, 50).map((p, i) => {
+        const addr = (p.addr || p.addr2 || '').trim() || '-';
+        const tel = (p.tel || '').trim() || '-';
+        const hours = formatNightPharmacyHours(p);
+        return `
+          <div class="pharmacy-card pharmacy-card-night" data-i="${i}">
+            <h3 class="pharmacy-name">🌙 ${(p.name+'').replace(/</g, '&lt;')}</h3>
+            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
+            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
+            <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
+          </div>
+        `;
+      }).join('');
+      const more = items.length > 50 ? `<p class="pharmacy-more">외 ${items.length - 50}곳 (상위 50곳만 표시)</p>` : '';
+      resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">심야운영약국 680곳 (E-GEN·대한약사회, 2026-02 갱신). 방문 전 전화 확인 권장.</p>';
+      return;
+    }
+
     resultsEl.innerHTML = '<div class="loading">약국 정보를 검색 중...</div>';
     const { items, total, error } = await fetchPharmacyList({ Q0, Q1, QN, QT, numOfRows: 30 });
     if (error) {

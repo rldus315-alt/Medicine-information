@@ -567,6 +567,9 @@ body {
 }
 
 /* 근처 약국 */
+.pharmacy-mode-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.pharmacy-mode-row label { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; font-size: 0.9rem; }
+.pharmacy-more { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; }
 .pharmacy-form {
   background: var(--card);
   padding: 1.5rem;
