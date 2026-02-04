@@ -62,7 +62,9 @@ const BODY_PART_MEDICINES = {
   arm: { label: '팔', keywords: ['근육통', '염좌', '근육', '어깨'], categoryKw: ['진통', '소염'] },
   leg: { label: '다리', keywords: ['근육통', '염좌', '다리', '허리'], categoryKw: ['진통', '소염'] },
   joint: { label: '관절', keywords: ['관절', '류마티스', '통풍', '염좌'], categoryKw: ['진통', '소염', '류마티스'] },
-  organ: { label: '장기', keywords: ['간', '신장', '위', '장', '소화', '간보호'], categoryKw: ['건위', '소화', '간', '이담'] },
+  bloodpressure: { label: '혈압', keywords: ['고혈압', '혈압', '항고혈압', '혈관'], categoryKw: ['고혈압', '혈압', '심혈관'] },
+  kidney: { label: '신장', keywords: ['신장', '이뇨', '요로', '부종'], categoryKw: ['신장', '이뇨', '요로'] },
+  heart: { label: '심장', keywords: ['심장', '협심증', '부정맥', '심부전'], categoryKw: ['심장', '심혈관'] },
   skin: { label: '피부', keywords: ['피부', '습진', '가려움', '발진'], categoryKw: ['피부', '연화'] }
 };
 

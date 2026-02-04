@@ -143,22 +143,33 @@ body {
   border: 1px solid var(--border);
 }
 .body-part-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-align: center; }
-.body-figure { text-align: center; margin-bottom: 0.75rem; }
-.body-svg { width: 100%; max-width: 160px; height: auto; }
-.body-svg-outline .body-part { cursor: pointer; }
-.body-part-labels { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
-.body-part-btn {
-  padding: 0.4rem 0.7rem;
-  font-size: 0.85rem;
-  border: 1px solid var(--border);
-  background: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
+.body-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  max-width: 320px;
+  margin: 0 auto;
 }
-.body-part-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--bg); }
-.body-part-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.body-icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #374151;
+  transition: color 0.2s, background 0.2s;
+  border: 1px solid transparent;
+}
+.body-icon-cell:hover { color: var(--primary); background: var(--bg); }
+.body-icon-cell.active { color: var(--primary); background: rgba(37,99,235,0.08); border-color: var(--primary); }
+.body-icon-svg {
+  width: 36px;
+  height: 36px;
+  stroke-width: 1;
+}
+.body-icon-cell span { font-size: 0.75rem; font-weight: 500; }
 
 .search-results, .pill-results {
   display: flex;
@@ -310,4 +321,5 @@ h2 { font-size: 1.25rem; margin-bottom: 0.25rem; }
   .nav { flex-direction: column; }
   .nav-btn { flex: 1; }
   .form-row { grid-template-columns: 1fr; }
+  .body-icon-grid { grid-template-columns: repeat(3, 1fr); }
 }

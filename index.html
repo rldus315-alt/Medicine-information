@@ -41,39 +41,60 @@
           <p class="search-hint">한국 의약품 3,357건 · 효능·사용법·주의사항·부작용 포함</p>
         </div>
         <div class="body-part-section">
-          <p class="body-part-title">부위별로 찾기 · 아픈 곳을 클릭하세요</p>
-          <div class="body-figure">
-            <svg viewBox="0 0 140 220" class="body-svg body-svg-outline">
-              <defs>
-                <style>.body-outline{fill:none!important;stroke:#64748b;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s,stroke-width .2s}.body-outline:hover,.body-outline.active{stroke:#2563eb;stroke-width:1.5}</style>
-              </defs>
-              <ellipse cx="70" cy="35" rx="22" ry="25" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="head"/>
-              <ellipse cx="60" cy="38" rx="5" ry="4" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="eye"/>
-              <ellipse cx="80" cy="38" rx="5" ry="4" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="eye"/>
-              <path d="M70 45 L70 55" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="nose"/>
-              <rect x="55" y="58" width="30" height="18" rx="2" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="throat"/>
-              <ellipse cx="70" cy="105" rx="28" ry="22" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="chest"/>
-              <ellipse cx="70" cy="142" rx="22" ry="18" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="stomach"/>
-              <ellipse cx="70" cy="155" rx="14" ry="10" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="organ"/>
-              <circle cx="70" cy="148" r="8" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="joint"/>
-              <ellipse cx="28" cy="115" rx="12" ry="35" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="arm"/>
-              <ellipse cx="112" cy="115" rx="12" ry="35" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="arm"/>
-              <ellipse cx="48" cy="195" rx="10" ry="32" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="leg"/>
-              <ellipse cx="92" cy="195" rx="10" ry="32" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="leg"/>
-            </svg>
-          </div>
-          <div class="body-part-labels">
-            <button class="body-part-btn" data-part="head">머리</button>
-            <button class="body-part-btn" data-part="eye">눈</button>
-            <button class="body-part-btn" data-part="nose">코</button>
-            <button class="body-part-btn" data-part="throat">목</button>
-            <button class="body-part-btn" data-part="chest">가슴</button>
-            <button class="body-part-btn" data-part="stomach">위</button>
-            <button class="body-part-btn" data-part="arm">팔</button>
-            <button class="body-part-btn" data-part="leg">다리</button>
-            <button class="body-part-btn" data-part="joint">관절</button>
-            <button class="body-part-btn" data-part="organ">장기</button>
-            <button class="body-part-btn" data-part="skin">피부</button>
+          <p class="body-part-title">부위별로 찾기 · 아이콘을 클릭하세요</p>
+          <div class="body-icon-grid">
+            <div class="body-icon-cell body-part" data-part="head" title="머리">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><ellipse cx="16" cy="14" rx="10" ry="12" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>머리</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="eye" title="눈">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><ellipse cx="16" cy="16" rx="8" ry="6" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="16" cy="16" r="2" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>눈</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="nose" title="코">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M16 6 L16 26 M14 8 Q16 10 18 8" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>코</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="throat" title="목">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><rect x="10" y="8" width="12" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>목</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="chest" title="가슴">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M6 12 Q16 8 26 12 Q28 18 24 22 Q16 26 8 22 Q4 18 6 12" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>가슴</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="stomach" title="위">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M8 10 Q16 6 24 10 Q26 18 22 24 Q16 28 10 24 Q6 18 8 10" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>위</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="heart" title="심장">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M16 26 C8 20 6 14 10 10 C14 6 16 10 16 10 C16 10 18 6 22 10 C26 14 24 20 16 26" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>심장</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="kidney" title="신장">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><ellipse cx="10" cy="16" rx="6" ry="8" fill="none" stroke="currentColor" stroke-width="1"/><ellipse cx="22" cy="16" rx="6" ry="8" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>신장</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="bloodpressure" title="혈압">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M6 20 L10 14 L14 20 L18 10 L22 16 L26 12" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>혈압</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="arm" title="팔">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><ellipse cx="16" cy="16" rx="4" ry="12" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>팔</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="leg" title="다리">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><ellipse cx="16" cy="16" rx="5" ry="12" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>다리</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="joint" title="관절">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><path d="M8 20 L16 8 L24 20" fill="none" stroke="currentColor" stroke-width="1"/><circle cx="16" cy="14" r="4" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>관절</span>
+            </div>
+            <div class="body-icon-cell body-part" data-part="skin" title="피부">
+              <svg viewBox="0 0 32 32" class="body-icon-svg"><circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="1"/><path d="M10 16 Q16 10 22 16 Q16 22 10 16" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+              <span>피부</span>
+            </div>
           </div>
         </div>
         <div class="search-results" id="searchResults"></div>
