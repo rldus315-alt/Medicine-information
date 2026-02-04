@@ -247,8 +247,8 @@
   <script src="config.js?v=2"></script>
   <script>
     var _k='88454fe0566a8c47e542a90d926c8ed71893ff9402d7c05a9aa600c64abbfcbf';
-    if(typeof DATA_GO_KR_API_KEY==='undefined'){var DATA_GO_KR_API_KEY=_k;}
-    if(typeof DATA_GO_KR_PHARMACY_API_KEY==='undefined'){var DATA_GO_KR_PHARMACY_API_KEY=_k;}
+    if(typeof DATA_GO_KR_API_KEY==='undefined'||!DATA_GO_KR_API_KEY){var DATA_GO_KR_API_KEY=_k;}
+    if(typeof DATA_GO_KR_PHARMACY_API_KEY==='undefined'||!DATA_GO_KR_PHARMACY_API_KEY){var DATA_GO_KR_PHARMACY_API_KEY=_k;}
   </script>
   <script src="data.js?v=2"></script>
   <script src="night-pharmacy-data.js?v=2"></script>
@@ -257,7 +257,7 @@
   <script>if(typeof PHARMACY_DATA==='undefined'){var PHARMACY_DATA=[];}</script>
   <script src="korean-drugs.js"></script>
   <script>if(typeof KOREAN_DRUG_DATABASE==='undefined'){var KOREAN_DRUG_DATABASE=[];}</script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
   <script>
     if (typeof KOREAN_TO_ENGLISH === 'undefined') {
       document.body.innerHTML = '<p style="padding:2rem;color:red;">data.js를 불러올 수 없습니다. index.html과 같은 폴더에 data.js, app.js, styles.css가 있는지 확인하세요.</p>';

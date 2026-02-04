@@ -1599,6 +1599,10 @@ function initPharmacy() {
   const apiNotice = document.getElementById('pharmacyApiNotice');
   if (!hasEmbeddedData && apiNotice) apiNotice.classList.remove('hidden');
   else if (apiNotice) apiNotice.classList.add('hidden');
+  if (!hasEmbeddedData) {
+    const nightRadio = document.querySelector('input[name="pharmacyMode"][value="night"]');
+    if (nightRadio) nightRadio.checked = true;
+  }
 
   if (typeof SIDO_SIGUGUN !== 'undefined') {
     Object.keys(SIDO_SIGUGUN).forEach(sido => {
@@ -1702,13 +1706,14 @@ function initPharmacy() {
     }
 
     const embeddedItems = filterPharmacyData(Q0, Q1, QN);
-    if (embeddedItems.length > 0) {
-      const cardsHtml = embeddedItems.slice(0, 50).map((item, i) => {
-        const name = item.dutyName || '-';
-        const addr = item.dutyAddr || '-';
-        const tel = item.dutyTel1 || '-';
-        const hours = formatAllPharmacyHours(item);
-        return `
+    if (hasEmbeddedData) {
+      if (embeddedItems.length > 0) {
+        const cardsHtml = embeddedItems.slice(0, 50).map((item, i) => {
+          const name = item.dutyName || '-';
+          const addr = item.dutyAddr || '-';
+          const tel = item.dutyTel1 || '-';
+          const hours = formatAllPharmacyHours(item);
+          return `
           <div class="pharmacy-card" data-i="${i}">
             <h3 class="pharmacy-name">${(name+'').replace(/</g, '&lt;')}</h3>
             <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
@@ -1716,9 +1721,12 @@ function initPharmacy() {
             <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
           </div>
         `;
-      }).join('');
-      const more = embeddedItems.length > 50 ? `<p class="pharmacy-more">외 ${embeddedItems.length - 50}곳 (상위 50곳만 표시)</p>` : '';
-      resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">전국 약국 1,700곳 (공공데이터). 방문 전 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
+        }).join('');
+        const more = embeddedItems.length > 50 ? `<p class="pharmacy-more">외 ${embeddedItems.length - 50}곳 (상위 50곳만 표시)</p>` : '';
+        resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">전국 약국 1,700곳 (공공데이터). 방문 전 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
+      } else {
+        resultsEl.innerHTML = '<p class="pharmacy-empty">해당 지역에 등록된 약국이 없습니다. 시·군·구를 바꾸거나 약국명으로 검색해 보세요.</p>';
+      }
       return;
     }
 
