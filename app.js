@@ -138,8 +138,9 @@ function getRelevanceScore(d, query) {
   const ingredient = (d.ingredient || '').toLowerCase();
   const company = (d.company || '').toLowerCase();
   const category = (d.category || '').toLowerCase();
+  const efcy = (d.efcyQesitm || '').toLowerCase();
   if (!q || !name) return 0;
-  // 품목명 정확 일치 > 품목명 시작 일치 > 품목명 포함 > 영문명/성분/업체/분류
+  // 품목명 정확 일치 > 품목명 시작 일치 > 품목명 포함 > 영문명/성분/업체/분류/효능
   if (name === q) return 100;
   if (name.startsWith(q)) return 80;
   if (name.includes(q)) return 60;
@@ -147,6 +148,7 @@ function getRelevanceScore(d, query) {
   if (nameEn.startsWith(q) || nameEn.includes(q)) return 40;
   if (ingredient.includes(q)) return 30;
   if (company.includes(q) || category.includes(q)) return 20;
+  if (efcy.includes(q)) return 15;
   return 10;
 }
 
@@ -158,7 +160,7 @@ function searchKoreanDrugs(query) {
   const seen = new Map();
   const matchedByOriginal = new Set(); // 원본 검색어로 매칭된 항목
 
-  // 1단계: 원본 검색어로만 검색 (타이레놀 → 품목명에 타이레놀 포함된 것 우선)
+  // 1단계: 원본 검색어로만 검색 (품목명/분류/주성분/효능)
   if (qOriginal) {
     KOREAN_DRUG_DATABASE.forEach(d => {
       const name = (d.name || '').toLowerCase();
@@ -166,8 +168,9 @@ function searchKoreanDrugs(query) {
       const company = (d.company || '').toLowerCase();
       const ingredient = (d.ingredient || '').toLowerCase();
       const category = (d.category || '').toLowerCase();
+      const efcy = (d.efcyQesitm || '').toLowerCase();
       const match = name.includes(qOriginal) || nameEn.includes(qOriginal) ||
-        company.includes(qOriginal) || ingredient.includes(qOriginal) || category.includes(qOriginal);
+        company.includes(qOriginal) || ingredient.includes(qOriginal) || category.includes(qOriginal) || efcy.includes(qOriginal);
       if (match) {
         const key = (d.name || '') + '|' + (d.company || '');
         if (!seen.has(key)) {
@@ -190,8 +193,9 @@ function searchKoreanDrugs(query) {
       const company = (d.company || '').toLowerCase();
       const ingredient = (d.ingredient || '').toLowerCase();
       const category = (d.category || '').toLowerCase();
+      const efcy = (d.efcyQesitm || '').toLowerCase();
       const match = name.includes(ql) || nameEn.includes(ql) || company.includes(ql) ||
-        ingredient.includes(ql) || category.includes(ql);
+        ingredient.includes(ql) || category.includes(ql) || efcy.includes(ql);
       if (match && !seen.has(key)) seen.set(key, d);
     });
   }
@@ -552,7 +556,7 @@ function getDrugSuggestions(query) {
   }
   POPULAR_TERMS.forEach(t => sources.push({ name: t }));
   if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
-    KOREAN_DRUG_DATABASE.forEach(d => sources.push({ name: d.name, nameEn: d.nameEn, ingredient: d.ingredient }));
+    KOREAN_DRUG_DATABASE.forEach(d => sources.push({ name: d.name, nameEn: d.nameEn, ingredient: d.ingredient, efcyQesitm: d.efcyQesitm }));
   }
   const matches = [];
   const seen = new Set();
@@ -560,7 +564,8 @@ function getDrugSuggestions(query) {
     const name = (s.name || '').toLowerCase();
     const nameEn = (s.nameEn || '').toLowerCase();
     const ingredient = (s.ingredient || '').toLowerCase();
-    const match = name.includes(q) || nameEn.includes(q) || ingredient.includes(q) ||
+    const efcy = (s.efcyQesitm || '').toLowerCase();
+    const match = name.includes(q) || nameEn.includes(q) || ingredient.includes(q) || efcy.includes(q) ||
       chosungMatch(name, q) || (qChosung && getChosung(name[0]) === q);
     if (match && name && !seen.has(name)) {
       seen.add(name);
