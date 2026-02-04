@@ -2,6 +2,7 @@
 .cursor/
 
 # Local config (API keys - use config.js.example)
+config.js
 csv-path.txt
 merged_data.csv
 medicine_data.csv

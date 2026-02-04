@@ -51,23 +51,6 @@ const DRUG_EXTENDED_INFO = {
   }
 };
 
-// 부위별 의약품 검색 (증상·분류 키워드)
-const BODY_PART_MEDICINES = {
-  head: { label: '머리', keywords: ['두통', '편두통', '해열', '진통', '신경통'], categoryKw: ['해열', '진통', '소염'] },
-  eye: { label: '눈', keywords: ['눈', '결막', '시력', '안약', '충혈'], categoryKw: ['안과'] },
-  nose: { label: '코', keywords: ['비염', '코막힘', '축농증', '콧물', '코'], categoryKw: ['비염', '알레르기'] },
-  throat: { label: '목/인후', keywords: ['기침', '인후통', '목', '편도', '목쉼'], categoryKw: ['진해', '거담', '인후'] },
-  chest: { label: '가슴', keywords: ['기침', '가슴', '천식', '기관지'], categoryKw: ['진해', '거담', '기관지'] },
-  stomach: { label: '위/복부', keywords: ['위', '소화', '위장', '속쓰림', '복통', '구역', '구토'], categoryKw: ['건위', '소화', '제산', '위장'] },
-  arm: { label: '팔', keywords: ['근육통', '염좌', '근육', '어깨'], categoryKw: ['진통', '소염'] },
-  leg: { label: '다리', keywords: ['근육통', '염좌', '다리', '허리'], categoryKw: ['진통', '소염'] },
-  joint: { label: '관절', keywords: ['관절', '류마티스', '통풍', '염좌'], categoryKw: ['진통', '소염', '류마티스'] },
-  bloodpressure: { label: '혈압', keywords: ['고혈압', '혈압', '항고혈압', '혈관'], categoryKw: ['고혈압', '혈압', '심혈관'] },
-  kidney: { label: '신장', keywords: ['신장', '이뇨', '요로', '부종'], categoryKw: ['신장', '이뇨', '요로'] },
-  heart: { label: '심장', keywords: ['심장', '협심증', '부정맥', '심부전'], categoryKw: ['심장', '심혈관'] },
-  skin: { label: '피부', keywords: ['피부', '습진', '가려움', '발진'], categoryKw: ['피부', '연화'] }
-};
-
 // 약물 상호작용 데이터 (주요 상호작용 - 한글/영문)
 const INTERACTION_DATABASE = {
   "warfarin": ["아스피린", "이부프로펜", "naproxen", "나프록센", "비타민K"],
