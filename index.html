@@ -5,9 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>의약품 정보 | Medicine Info</title>
   <script>
-    if (location.pathname.startsWith('/Medicine-information')) {
-      document.write('<base href="/Medicine-information/">');
-    }
+    (function() {
+      var p = location.pathname;
+      if (p.indexOf('/Medicine-information') === 0) {
+        var base = location.origin + '/Medicine-information/';
+        document.write('<base href="' + base + '">');
+      }
+    })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
