@@ -695,7 +695,7 @@ identifyPillBtn.addEventListener('click', () => {
   const matches = PILL_DATABASE.filter(p => {
     const shapeMatch = !shape || p.shape === shape;
     const colorMatch = !color || p.color === color;
-    const imprintMatch = !imprint || p.imprint.toUpperCase().includes(imprint) || imprint.includes(p.imprint.toUpperCase());
+    const imprintMatch = !imprint || p.imprint.toUpperCase() === imprint;
     return shapeMatch && colorMatch && imprintMatch;
   });
   const shapeLabels = { round: '원형', oval: '타원형', capsule: '캡슐형', rectangle: '사각형', diamond: '다이아몬드', hexagon: '육각형', octagon: '팔각형', triangle: '삼각형' };
