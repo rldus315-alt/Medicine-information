@@ -40,6 +40,39 @@
           <div class="search-suggestions" id="searchSuggestions"></div>
           <p class="search-hint">한국 의약품 3,357건 · 효능·사용법·주의사항·부작용 포함</p>
         </div>
+        <div class="body-part-section">
+          <p class="body-part-title">부위별로 찾기 · 아픈 곳을 클릭하세요</p>
+          <div class="body-figure">
+            <svg viewBox="0 0 140 200" class="body-svg">
+              <defs><linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#e0f2fe"/><stop offset="100%" style="stop-color:#bae6fd"/></linearGradient></defs>
+              <ellipse cx="70" cy="35" rx="22" ry="25" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="head"/>
+              <ellipse cx="70" cy="75" rx="20" ry="12" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="eye"/>
+              <ellipse cx="70" cy="95" rx="8" ry="8" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="nose"/>
+              <rect x="55" y="102" width="30" height="20" rx="4" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="throat"/>
+              <ellipse cx="70" cy="140" rx="30" ry="25" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="chest"/>
+              <ellipse cx="70" cy="175" rx="22" ry="18" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="stomach"/>
+              <ellipse cx="25" cy="115" rx="15" ry="40" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="arm"/>
+              <ellipse cx="115" cy="115" rx="15" ry="40" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="arm"/>
+              <ellipse cx="45" cy="195" rx="12" ry="35" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="leg"/>
+              <ellipse cx="95" cy="195" rx="12" ry="35" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="leg"/>
+              <circle cx="70" cy="155" r="14" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5" class="body-part" data-part="joint"/>
+              <ellipse cx="70" cy="168" rx="16" ry="12" fill="#7dd3fc" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="organ"/>
+            </svg>
+          </div>
+          <div class="body-part-labels">
+            <button class="body-part-btn" data-part="head">머리</button>
+            <button class="body-part-btn" data-part="eye">눈</button>
+            <button class="body-part-btn" data-part="nose">코</button>
+            <button class="body-part-btn" data-part="throat">목</button>
+            <button class="body-part-btn" data-part="chest">가슴</button>
+            <button class="body-part-btn" data-part="stomach">위</button>
+            <button class="body-part-btn" data-part="arm">팔</button>
+            <button class="body-part-btn" data-part="leg">다리</button>
+            <button class="body-part-btn" data-part="joint">관절</button>
+            <button class="body-part-btn" data-part="organ">장기</button>
+            <button class="body-part-btn" data-part="skin">피부</button>
+          </div>
+        </div>
         <div class="search-results" id="searchResults"></div>
       </section>
 

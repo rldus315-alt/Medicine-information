@@ -135,6 +135,32 @@ body {
 
 .add-to-med-btn { margin-bottom: 1rem; display: inline-block; }
 
+.body-part-section {
+  background: var(--card);
+  padding: 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+.body-part-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem; text-align: center; }
+.body-figure { text-align: center; margin-bottom: 0.75rem; }
+.body-svg { width: 100%; max-width: 140px; height: auto; }
+.body-part { cursor: pointer; transition: fill 0.2s, stroke 0.2s; }
+.body-part:hover { fill: #7dd3fc !important; stroke: #0284c7 !important; }
+.body-part-labels { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.body-part-btn {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.body-part-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--bg); }
+.body-part-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
 .search-results, .pill-results {
   display: flex;
   flex-direction: column;

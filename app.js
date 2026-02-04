@@ -69,6 +69,48 @@ const viewDetail = document.getElementById('viewDetail');
 const detailContent = document.getElementById('detailContent');
 const backBtn = document.getElementById('backBtn');
 
+// 부위별 검색
+function searchByBodyPart(partId) {
+  if (typeof BODY_PART_MEDICINES === 'undefined' || !BODY_PART_MEDICINES[partId]) return;
+  const cfg = BODY_PART_MEDICINES[partId];
+  const keywords = [...(cfg.keywords || []), ...(cfg.categoryKw || [])];
+  if (!KOREAN_DRUG_DATABASE || !keywords.length) return;
+  const seen = new Map();
+  keywords.forEach(kw => {
+    const kl = kw.toLowerCase();
+    KOREAN_DRUG_DATABASE.forEach(d => {
+      const cat = (d.category || '').toLowerCase();
+      const efcy = (d.efcyQesitm || '').toLowerCase();
+      const ing = (d.ingredient || '').toLowerCase();
+      const name = (d.name || '').toLowerCase();
+      const match = cat.includes(kl) || efcy.includes(kl) || ing.includes(kl) || name.includes(kl);
+      if (match) {
+        const key = (d.name || '') + '|' + (d.company || '');
+        if (!seen.has(key)) seen.set(key, d);
+      }
+    });
+  });
+  const list = Array.from(seen.values()).slice(0, 30);
+  searchResults.innerHTML = list.length ? `
+    <p class="search-hint" style="margin-bottom:0.5rem;">${cfg.label} 관련 의약품 (${list.length}건)</p>
+  ` + list.map((d, i) => `
+    <div class="drug-card" data-id="${i}" data-source="korean">
+      <h3>${d.name || '-'}</h3>
+      <p>성분: ${(d.ingredient || '-').substring(0, 80)}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
+      ${d.category ? `<p class="drug-category">${d.category}</p>` : ''}
+    </div>
+  `).join('') : `<p class="warning">${cfg.label} 관련 의약품을 찾지 못했습니다.</p>`;
+  searchResults.querySelectorAll('.drug-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const item = { source: 'korean', data: list[parseInt(card.dataset.id)] };
+      showDetail(item.source, item.data);
+    });
+  });
+  document.querySelectorAll('.body-part-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.body-part-btn[data-part="${partId}"]`);
+  if (btn) btn.classList.add('active');
+}
+
 // Navigation
 navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -214,6 +256,7 @@ function prependPriorityPillMatches(results, query) {
 // Search - e약은요 API(키 있을 때) → 로컬 DB → OpenFDA 순으로 검색
 async function searchDrugs(query) {
   if (!query.trim()) return;
+  document.querySelectorAll('.body-part-btn').forEach(b => b.classList.remove('active'));
   searchResults.innerHTML = '<div class="loading">검색 중...</div>';
   const q = query.trim();
 
@@ -501,6 +544,13 @@ searchInput.addEventListener('keypress', e => {
     const q = searchInput.value.trim();
     if (q) { saveRecentSearch(q); searchDrugs(q); }
   }
+});
+
+document.querySelectorAll('.body-part, .body-part-btn').forEach(el => {
+  el.addEventListener('click', () => {
+    const part = el.dataset.part;
+    if (part) searchByBodyPart(part);
+  });
 });
 
 // 한글 초성 (ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ)
