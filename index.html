@@ -131,6 +131,20 @@
     </footer>
   </div>
 
+  <!-- 복약 안내문 모달 -->
+  <div class="med-guide-overlay" id="medGuideOverlay">
+    <div class="med-guide-modal">
+      <div class="med-guide-header">
+        <h2>복약 안내문</h2>
+        <div class="med-guide-actions">
+          <button class="btn btn-secondary" id="medGuidePrintBtn">🖨️ 인쇄</button>
+          <button class="btn btn-secondary" id="medGuideCloseBtn">닫기</button>
+        </div>
+      </div>
+      <div class="med-guide-body" id="medGuideBody"></div>
+    </div>
+  </div>
+
   <script src="config.js"></script>
   <script>if(typeof DATA_GO_KR_API_KEY==='undefined'){var DATA_GO_KR_API_KEY='';}</script>
   <script src="data.js"></script>

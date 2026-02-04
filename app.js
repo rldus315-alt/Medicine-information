@@ -7,18 +7,198 @@ function addSpacing(text) {
     .replace(/\)/g, ') ')
     .replace(/·/g, ' · ')
     .replace(/~/g, ' ~ ')
-    .replace(/에사용/g, '에 사용')
-    .replace(/을복용|를복용/g, (m) => m[0] === '을' ? '을 복용' : '를 복용')
-    .replace(/이약은|이약을|이약이/g, (m) => m.slice(0, 2) + ' ' + m.slice(2))
-    .replace(/및성인|및만/g, (m) => '및 ' + m.slice(1))
+    .replace(/\/\s*/g, ' / ')
+    .replace(/에사용|에복용|시에복용/g, (m) => m.includes('시에') ? m.slice(0, 3) + ' 복용' : m.slice(0, 1) + ' ' + m.slice(1))
+    .replace(/을복용|를복용|을사용|를사용/g, (m) => (m[0] === '을' ? '을 ' : '를 ') + (m.includes('복용') ? '복용' : '사용'))
+    .replace(/이약은|이약을|이약이|이약에/g, (m) => m.slice(0, 1) + ' ' + m.slice(1))
+    .replace(/환자는이약|환자는이약을/g, '환자는 이 약을')
+    .replace(/의젖먹이|의영아|의소아/g, (m) => '의 ' + m.slice(1))
+    .replace(/및성인|및만|및취침|및수유|및유아|및소아/g, (m) => '및 ' + m.slice(1))
+    .replace(/이상및/g, '이상 및 ')
+    .replace(/의사또는약사와상의/g, '의사 또는 약사와 상의')
     .replace(/의사또는약사/g, '의사 또는 약사')
-    .replace(/의사또는|약사와상의/g, (m) => m.includes('또는') ? '의사 또는' : '약사와 상의')
+    .replace(/약사와상의/g, '약사와 상의')
     .replace(/([가-힣])또는([가-힣])/g, '$1 또는 $2')
     .replace(/([가-힣])및([가-힣])/g, '$1 및 $2')
+    .replace(/(\d+)(세|개월)(이상|미만)/g, '$1$2 $3')
+    .replace(/(\d+)(시간|일|회)(이상)/g, '$1$2 $3')
+    .replace(/만(\d+)(세|개월)/g, '만 $1$2')
     .replace(/(\d)(회|일|병)(\d)/g, '$1$2 $3')
-    .replace(/(\d)(mL|mg|g)([^\d\s.,])/g, '$1$2 $3')
+    .replace(/(\d)(회|일)([가-힣정])/g, '$1$2 $3')
+    .replace(/([가-힣])([은는])(\d)/g, '$1$2 $3')
+    .replace(/식후에복용|식간에복용/g, (m) => m.slice(0, 3) + ' 복용')
+    .replace(/복용간격은(\d)/g, '복용간격은 $1')
+    .replace(/복용하기전에|사용하기전에/g, (m) => m.slice(0, -3) + '기 전에')
+    .replace(/습기와빛을피해/g, '습기와 빛을 피해')
+    .replace(/습기와빛/g, '습기와 빛')
+    .replace(/빛을피해/g, '빛을 피해')
+    .replace(/피해실온|피해보관/g, (m) => '피해 ' + m.slice(2))
+    .replace(/실온에서보관/g, '실온에서 보관')
+    .replace(/어린이의손이닿지않는/g, '어린이의 손이 닿지 않는')
+    .replace(/손이닿지않는/g, '손이 닿지 않는')
+    .replace(/않는곳에/g, '않는 곳에')
+    .replace(/곳에보관/g, '곳에 보관')
+    .replace(/할경우/g, '할 경우')
+    .replace(/없을경우/g, '없을 경우')
+    .replace(/경우보호자/g, '경우 보호자')
+    .replace(/(\d개월)정도/g, '$1 정도')
+    .replace(/복용을즉각중지하고/g, '복용을 즉각 중지하고')
+    .replace(/복용을즉각/g, '복용을 즉각')
+    .replace(/정해진용법과용량을잘지키십시오/g, '정해진 용법과 용량을 잘 지키십시오')
+    .replace(/정해진용법과용량을잘지키/g, '정해진 용법과 용량을 잘 지키')
+    .replace(/보호자의지도감독하에/g, '보호자의 지도 감독 하에')
+    .replace(/에게투여|하에투여/g, (m) => m.slice(0, 2) + ' ' + m.slice(2))
+    .replace(/식사와식사/g, '식사와 식사')
+    .replace(/때사이/g, '때 사이')
+    .replace(/복용하여도증상의개선이없을/g, '복용하여도 증상의 개선이 없을')
+    .replace(/복용하지마십시오/g, '복용하지 마십시오')
+    .replace(/젖먹이는이약을/g, '젖먹이는 이 약을')
+    .replace(/약은식욕/g, '약은 식욕')
+    .replace(/식욕감퇴/g, '식욕 감퇴')
+    .replace(/임신하고있을가능성이있는/g, '임신하고 있을 가능성이 있는')
+    .replace(/있는여성/g, '있는 여성')
+    .replace(/나트륨제한식이를하는/g, '나트륨 제한 식이를 하는')
+    .replace(/하는사람은/g, '하는 사람은')
+    .replace(/으로합니다/g, '으로 합니다')
+    .replace(/(회|일)(\d)(정)/g, '$1 $2$3')
+    .replace(/독성표피괴사용해/g, '독성 표피 괴사 용해')
+    .replace(/(\d)(mL|mg|g)([^\d\s.,/])/g, '$1$2 $3')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// 복약 안내문 생성 (열람·인쇄용)
+function generateMedicationGuide(source, drug) {
+  const fmt = (t) => (t && t.trim()) ? addSpacing(String(t).trim()).replace(/\n/g, '<br>') : '-';
+  let name = '', company = '', ingredient = '', sections = [];
+
+  if (source === 'eyak') {
+    const d = drug;
+    name = d.itemName || '-';
+    company = d.entpName || '-';
+    ingredient = '-';
+    sections = [
+      { title: '효능·효과', data: d.efcyQesitm },
+      { title: '사용법', data: d.useMethodQesitm },
+      { title: '주의사항 (경고)', data: d.atpnWarnQesitm },
+      { title: '주의사항', data: d.atpnQesitm },
+      { title: '약물·음식 상호작용', data: d.intrcQesitm },
+      { title: '부작용', data: d.seQesitm },
+      { title: '보관법', data: d.depositMethodQesitm },
+    ].filter(s => s.data && s.data.trim());
+  } else if (source === 'korean') {
+    const d = drug;
+    name = d.name || '-';
+    company = d.company || '-';
+    ingredient = d.ingredient || '-';
+    let ext = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm ? d : null;
+    if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
+      const extInfo = DRUG_EXTENDED_INFO[d.name] || DRUG_EXTENDED_INFO[d.ingredient];
+      if (extInfo) ext = { ...d, ...extInfo };
+    }
+    sections = [
+      { title: '효능·효과', data: (ext && ext.efcyQesitm) || '' },
+      { title: '사용법', data: (ext && ext.useMethodQesitm) || '' },
+      { title: '주의사항 (경고)', data: (ext && ext.atpnWarnQesitm) || '' },
+      { title: '주의사항', data: (ext && ext.atpnQesitm) || '' },
+      { title: '약물·음식 상호작용', data: (ext && ext.intrcQesitm) || '' },
+      { title: '부작용', data: (ext && ext.seQesitm) || '' },
+      { title: '보관법', data: (ext && ext.depositMethodQesitm) || '' },
+    ].filter(s => s.data && s.data.trim());
+    if (sections.length === 0 && ingredient) {
+      sections = [{ title: '주성분', data: ingredient }];
+    }
+  } else {
+    const d = drug;
+    name = d.openfda?.brand_name?.[0] || d.openfda?.generic_name?.[0] || '-';
+    company = '-';
+    ingredient = d.openfda?.generic_name?.[0] || '-';
+    sections = [
+      { title: '효능·효과', data: d.indications_and_usage?.[0] || d.purpose?.[0] || '' },
+      { title: '용법·용량', data: d.dosage_and_administration?.[0] || '' },
+      { title: '주의사항', data: d.warnings?.[0] || d.precautions?.[0] || '' },
+      { title: '부작용', data: d.adverse_reactions?.[0] || '' },
+      { title: '금기', data: d.contraindications?.[0] || '' },
+      { title: '약물 상호작용', data: d.drug_interactions?.[0] || '' },
+      { title: '임신·수유', data: d.pregnancy_or_breast_feeding?.[0] || '' },
+    ].filter(s => s.data && s.data.trim());
+  }
+
+  const dateStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+  const sectionHtml = sections.map(s => `
+    <div class="med-guide-block">
+      <h4>${s.title}</h4>
+      <p>${fmt(s.data)}</p>
+    </div>
+  `).join('');
+
+  return `
+    <div class="med-guide-print">
+      <div class="med-guide-title">복약 안내문</div>
+      <div class="med-guide-meta">작성일: ${dateStr}</div>
+      <div class="med-guide-drug-name">${name}</div>
+      <div class="med-guide-info">
+        <p><strong>제조·판매:</strong> ${company}</p>
+        ${ingredient && ingredient !== '-' ? `<p><strong>주성분:</strong> ${fmt(ingredient)}</p>` : ''}
+      </div>
+      <hr>
+      ${sectionHtml}
+      <div class="med-guide-footer">
+        <p>※ 본 안내문은 참고용이며, 의료 상담을 대체하지 않습니다. 복용 방법·용량은 처방에 따르고, 궁금한 점은 의사 또는 약사에게 문의하세요.</p>
+      </div>
+    </div>
+  `;
+}
+
+function showMedicationGuide() {
+  if (!currentDetailDrug) return;
+  const body = document.getElementById('medGuideBody');
+  const overlay = document.getElementById('medGuideOverlay');
+  if (!body || !overlay) return;
+  body.innerHTML = generateMedicationGuide(currentDetailDrug.source, currentDetailDrug.data);
+  overlay.classList.add('visible');
+}
+
+function hideMedicationGuide() {
+  const overlay = document.getElementById('medGuideOverlay');
+  if (overlay) overlay.classList.remove('visible');
+}
+
+function printMedicationGuide() {
+  const body = document.getElementById('medGuideBody');
+  if (!body || !body.innerHTML.trim()) return;
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+      <meta charset="UTF-8">
+      <title>복약 안내문 - 인쇄</title>
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #1e293b; }
+        .med-guide-print { }
+        .med-guide-title { font-size: 18px; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
+        .med-guide-meta { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+        .med-guide-drug-name { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+        .med-guide-info p { font-size: 14px; line-height: 1.6; margin-bottom: 6px; }
+        .med-guide-block { margin-top: 16px; }
+        .med-guide-block h4 { font-size: 14px; color: #2563eb; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+        .med-guide-block p { font-size: 13px; line-height: 1.7; }
+        hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+        .med-guide-footer { font-size: 11px; color: #64748b; margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+      </style>
+    </head>
+    <body>${body.innerHTML}</body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 250);
 }
 
 // OpenFDA API Base
@@ -91,6 +271,7 @@ const searchResults = document.getElementById('searchResults');
 const viewDetail = document.getElementById('viewDetail');
 const detailContent = document.getElementById('detailContent');
 const backBtn = document.getElementById('backBtn');
+let currentDetailDrug = null; // { source, data } - 복약 안내문 생성용
 
 // Navigation
 navBtns.forEach(btn => {
@@ -324,7 +505,7 @@ function renderSearchResults(results) {
         <div class="drug-card" data-id="${i}" data-source="korean">
           <h3>${name}</h3>
           <p>성분: ${ingredient}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
-          ${category ? `<p class="drug-category">${category}</p>` : ''}
+          ${category ? `<p class="drug-category">${addSpacing(category)}</p>` : ''}
         </div>
       `;
     }
@@ -357,8 +538,10 @@ function addToMyMedications(name) {
 }
 
 function showDetail(source, drug) {
+  currentDetailDrug = { source, data: drug };
   const drugName = source === 'eyak' ? (drug.itemName || '') : source === 'korean' ? (drug.name || '') : (drug.openfda?.brand_name?.[0] || drug.openfda?.generic_name?.[0] || '');
   const addToMedBtn = drugName ? `<button class="btn btn-primary add-to-med-btn" data-name="${(drugName + '').replace(/"/g, '&quot;')}">💊 내 복용약에 저장</button>` : '';
+  const medGuideBtn = `<button class="btn btn-secondary add-to-med-btn med-guide-btn" type="button">📋 복약 안내문</button>`;
 
   if (source === 'eyak') {
     const d = drug;
@@ -374,7 +557,7 @@ function showDetail(source, drug) {
     ].filter(s => s.data && s.data.trim());
     detailContent.innerHTML = `
       <div class="detail-section">
-        ${addToMedBtn}
+        <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         ${imgHtml}
         <h3>기본 정보</h3>
         <p><strong>제품명:</strong> ${d.itemName || '-'}</p>
@@ -410,7 +593,7 @@ function showDetail(source, drug) {
       ].filter(s => s.data && s.data.trim());
       detailContent.innerHTML = `
         <div class="detail-section">
-          ${addToMedBtn}
+          <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
           ${imgHtml}
           <h3>기본 정보</h3>
           <p><strong>제품명:</strong> ${d.name || '-'}</p>
@@ -418,7 +601,7 @@ function showDetail(source, drug) {
           <p><strong>업체명:</strong> ${d.company || '-'}</p>
           <p><strong>전문/일반:</strong> ${d.type || '-'}</p>
           <p><strong>주성분:</strong> ${addSpacing((d.ingredient || '-').replace(/\|/g, ' / '))}</p>
-          ${d.category ? `<p><strong>분류:</strong> ${d.category}</p>` : ''}
+          ${d.category ? `<p><strong>분류:</strong> ${addSpacing(d.category)}</p>` : ''}
         </div>
         ${sections.map(s => `
           <div class="detail-section">
@@ -431,7 +614,7 @@ function showDetail(source, drug) {
     } else {
       detailContent.innerHTML = `
         <div class="detail-section">
-          ${addToMedBtn}
+          <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
           ${imgHtml}
           <h3>기본 정보</h3>
           <p><strong>품목명:</strong> ${d.name || '-'}</p>
@@ -446,7 +629,7 @@ function showDetail(source, drug) {
         ${d.category ? `
         <div class="detail-section">
           <h3>분류</h3>
-          <p>${d.category}</p>
+          <p>${addSpacing(d.category)}</p>
         </div>
         ` : ''}
         <p class="detail-source">출처: 식품의약품안전처 의약품통합정보시스템</p>
@@ -466,7 +649,7 @@ function showDetail(source, drug) {
     ];
     detailContent.innerHTML = `
       <div class="detail-section">
-        ${addToMedBtn}
+        <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         <h3>기본 정보</h3>
         <p><strong>상품명:</strong> ${brand}</p>
         <p><strong>성분명:</strong> ${generic}</p>
@@ -480,14 +663,16 @@ function showDetail(source, drug) {
     `;
   }
   detailContent.querySelectorAll('.add-to-med-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.name;
-      if (name) {
-        addToMyMedications(name);
+    if (btn.dataset.name) {
+      btn.addEventListener('click', () => {
+        addToMyMedications(btn.dataset.name);
         btn.textContent = '✓ 저장됨';
         btn.disabled = true;
-      }
-    });
+      });
+    }
+  });
+  detailContent.querySelectorAll('.med-guide-btn').forEach(btn => {
+    btn.addEventListener('click', showMedicationGuide);
   });
   document.getElementById('viewSearch').classList.remove('active');
   document.getElementById('viewSearch').classList.add('hidden');
@@ -501,6 +686,16 @@ backBtn.addEventListener('click', () => {
   document.getElementById('viewSearch').classList.add('active');
   document.getElementById('viewSearch').classList.remove('hidden');
 });
+
+// 복약 안내문 모달
+const medGuideOverlay = document.getElementById('medGuideOverlay');
+const medGuidePrintBtn = document.getElementById('medGuidePrintBtn');
+const medGuideCloseBtn = document.getElementById('medGuideCloseBtn');
+if (medGuideOverlay) {
+  medGuideOverlay.addEventListener('click', (e) => { if (e.target === medGuideOverlay) hideMedicationGuide(); });
+}
+if (medGuideCloseBtn) medGuideCloseBtn.addEventListener('click', hideMedicationGuide);
+if (medGuidePrintBtn) medGuidePrintBtn.addEventListener('click', printMedicationGuide);
 
 // 최근 검색어 저장 (최대 10개)
 const RECENT_SEARCHES_KEY = 'medicine_recent_searches';
