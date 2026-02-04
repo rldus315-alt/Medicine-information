@@ -127,16 +127,41 @@ function getRelevanceScore(d, query) {
   return 10;
 }
 
-// 한국 의약품 로컬 검색 (품목명, 영문명, 업체명, 주성분, 분류명) - 확장 검색어 적용, 정확한 일치 상단
+// 한국 의약품 로컬 검색 - 원본 검색어 매칭 우선, 확장 검색어는 보조
 function searchKoreanDrugs(query) {
   if (!KOREAN_DRUG_DATABASE) return [];
+  const qOriginal = (query || '').trim().toLowerCase();
   const terms = getExpandedSearchTerms(query);
   const seen = new Map();
-  const qOriginal = (query || '').trim();
+  const matchedByOriginal = new Set(); // 원본 검색어로 매칭된 항목
+
+  // 1단계: 원본 검색어로만 검색 (타이레놀 → 품목명에 타이레놀 포함된 것 우선)
+  if (qOriginal) {
+    KOREAN_DRUG_DATABASE.forEach(d => {
+      const name = (d.name || '').toLowerCase();
+      const nameEn = (d.nameEn || '').toLowerCase();
+      const company = (d.company || '').toLowerCase();
+      const ingredient = (d.ingredient || '').toLowerCase();
+      const category = (d.category || '').toLowerCase();
+      const match = name.includes(qOriginal) || nameEn.includes(qOriginal) ||
+        company.includes(qOriginal) || ingredient.includes(qOriginal) || category.includes(qOriginal);
+      if (match) {
+        const key = (d.name || '') + '|' + (d.company || '');
+        if (!seen.has(key)) {
+          seen.set(key, d);
+          matchedByOriginal.add(key);
+        }
+      }
+    });
+  }
+
+  // 2단계: 확장 검색어로 추가 검색 (acetaminophen 등 - 원본으로 매칭 안 된 것만)
   for (const t of terms) {
     if (!t || t.length < 1) continue;
     const ql = (t + '').toLowerCase();
     KOREAN_DRUG_DATABASE.forEach(d => {
+      const key = (d.name || '') + '|' + (d.company || '');
+      if (matchedByOriginal.has(key)) return; // 이미 원본으로 매칭됨 → 스킵
       const name = (d.name || '').toLowerCase();
       const nameEn = (d.nameEn || '').toLowerCase();
       const company = (d.company || '').toLowerCase();
@@ -144,15 +169,46 @@ function searchKoreanDrugs(query) {
       const category = (d.category || '').toLowerCase();
       const match = name.includes(ql) || nameEn.includes(ql) || company.includes(ql) ||
         ingredient.includes(ql) || category.includes(ql);
-      if (match) {
-        const key = (d.name || '') + '|' + (d.company || '');
-        if (!seen.has(key)) seen.set(key, d);
-      }
+      if (match && !seen.has(key)) seen.set(key, d);
     });
   }
+
   const list = Array.from(seen.values());
-  list.sort((a, b) => getRelevanceScore(b, qOriginal) - getRelevanceScore(a, qOriginal));
+  list.sort((a, b) => {
+    const keyA = (a.name || '') + '|' + (a.company || '');
+    const keyB = (b.name || '') + '|' + (b.company || '');
+    const origA = matchedByOriginal.has(keyA) ? 1 : 0;
+    const origB = matchedByOriginal.has(keyB) ? 1 : 0;
+    if (origA !== origB) return origB - origA; // 원본 매칭 우선
+    return getRelevanceScore(b, qOriginal) - getRelevanceScore(a, qOriginal);
+  });
   return list.slice(0, 30);
+}
+
+// 품목명 정확 일치 시 PILL_DATABASE 결과를 최상단에 추가 (타이레놀 등)
+function prependPriorityPillMatches(results, query) {
+  if (typeof PILL_DATABASE === 'undefined') return results;
+  const ql = (query || '').trim().toLowerCase();
+  if (!ql) return results;
+  // 검색어에 해당하는 품목명 목록 (타이레놀, tylenol, acetaminophen → 타이레놀)
+  const drugNamesToPrepend = new Set();
+  drugNamesToPrepend.add(ql);
+  if (typeof SEARCH_TERM_ALIASES !== 'undefined') {
+    const aliases = SEARCH_TERM_ALIASES[ql] || SEARCH_TERM_ALIASES[query?.trim()];
+    if (aliases) aliases.forEach(a => drugNamesToPrepend.add((a + '').toLowerCase()));
+  }
+  const pillMatches = PILL_DATABASE.filter(p => drugNamesToPrepend.has((p.name || '').toLowerCase()));
+  if (pillMatches.length === 0) return results;
+  const existingNames = new Set(results.map(r => ((r.data && r.data.name) || '').toLowerCase()));
+  const toPrepend = [];
+  for (const p of pillMatches) {
+    const pName = (p.name || '').toLowerCase();
+    if (!existingNames.has(pName)) {
+      toPrepend.push({ source: 'korean', data: { name: p.name, ingredient: p.ingredient, category: p.strength ? `[알약] ${p.strength}` : '[알약]' } });
+      existingNames.add(pName);
+    }
+  }
+  return toPrepend.concat(results);
 }
 
 // Search - e약은요 API(키 있을 때) → 로컬 DB → OpenFDA 순으로 검색
@@ -175,17 +231,21 @@ async function searchDrugs(query) {
             (d.itemName || '').toLowerCase().includes(q.toLowerCase()) ? 60 : 40
         }));
         scored.sort((a, b) => b.score - a.score);
-        renderSearchResults(scored.map(x => ({ source: x.source, data: x.data })));
+        let eyakResults = scored.map(x => ({ source: x.source, data: x.data }));
+        eyakResults = prependPriorityPillMatches(eyakResults, q);
+        renderSearchResults(eyakResults);
         return;
       }
     } catch (_) { /* fallback */ }
   }
 
-  // 2) 로컬 한국 의약품 DB (5,600+건)
+  // 2) 로컬 한국 의약품 DB + PILL_DATABASE (품목명 정확 일치 시 알약 DB 최상단)
   if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
     const koreanResults = searchKoreanDrugs(q);
-    if (koreanResults.length > 0) {
-      renderSearchResults(koreanResults.map(d => ({ source: 'korean', data: d })));
+    let finalResults = koreanResults.map(d => ({ source: 'korean', data: d }));
+    finalResults = prependPriorityPillMatches(finalResults, q);
+    if (finalResults.length > 0) {
+      renderSearchResults(finalResults);
       return;
     }
   }
@@ -206,7 +266,9 @@ async function searchDrugs(query) {
       searchResults.innerHTML = '<p class="error">검색 결과가 없습니다. 다른 검색어로 시도해 보세요 (예: 타이레놀, 게보린, 판콜, tylenol)</p>';
       return;
     }
-    renderSearchResults(results.map(d => ({ source: 'fda', data: d })));
+    let fdaResults = results.map(d => ({ source: 'fda', data: d }));
+    fdaResults = prependPriorityPillMatches(fdaResults, q);
+    renderSearchResults(fdaResults);
   } catch (err) {
     searchResults.innerHTML = `<p class="error">검색 실패: ${err.message}</p>`;
   }
@@ -411,11 +473,15 @@ searchInput.addEventListener('keypress', e => {
   }
 });
 
-// 검색어 추천 (자동완성 + 추천/최근 검색어)
+// 검색어 추천 (자동완성만 - 빈 입력 시 추천 없음)
 function initAutocomplete() {
   const searchSuggestions = document.getElementById('searchSuggestions');
   if (!searchSuggestions) return;
   let suggestTimeout = null;
+
+  // 초기화: 추천 숨김 (빈 상태에서 표시 방지)
+  searchSuggestions.classList.remove('visible');
+  searchSuggestions.innerHTML = '';
 
   function getSuggestions(query) {
     if (!query.trim() || typeof KOREAN_DRUG_DATABASE === 'undefined') return [];
@@ -444,6 +510,12 @@ function initAutocomplete() {
 
   function showSuggestions(items, isQuickTerms = false) {
     if (!items.length) {
+      searchSuggestions.classList.remove('visible');
+      searchSuggestions.innerHTML = '';
+      return;
+    }
+    // 빈 입력 시 추천 검색어(인기/최근) 절대 표시 안 함
+    if (isQuickTerms && !searchInput.value.trim()) {
       searchSuggestions.classList.remove('visible');
       searchSuggestions.innerHTML = '';
       return;
@@ -486,7 +558,8 @@ function initAutocomplete() {
     if (q) {
       showSuggestions(getSuggestions(q));
     } else {
-      showSuggestions(getQuickTerms(), true);
+      searchSuggestions.classList.remove('visible');
+      searchSuggestions.innerHTML = '';
     }
   });
 
