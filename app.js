@@ -1,3 +1,26 @@
+// 한글 띄어쓰기 보정 (의약품 정보용)
+function addSpacing(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\|/g, ' | ')
+    .replace(/\(/g, ' (')
+    .replace(/\)/g, ') ')
+    .replace(/·/g, ' · ')
+    .replace(/~/g, ' ~ ')
+    .replace(/에사용/g, '에 사용')
+    .replace(/을복용|를복용/g, (m) => m[0] === '을' ? '을 복용' : '를 복용')
+    .replace(/이약은|이약을|이약이/g, (m) => m.slice(0, 2) + ' ' + m.slice(2))
+    .replace(/및성인|및만/g, (m) => '및 ' + m.slice(1))
+    .replace(/의사또는약사/g, '의사 또는 약사')
+    .replace(/의사또는|약사와상의/g, (m) => m.includes('또는') ? '의사 또는' : '약사와 상의')
+    .replace(/([가-힣])또는([가-힣])/g, '$1 또는 $2')
+    .replace(/([가-힣])및([가-힣])/g, '$1 및 $2')
+    .replace(/(\d)(회|일|병)(\d)/g, '$1$2 $3')
+    .replace(/(\d)(mL|mg|g)([^\d\s.,])/g, '$1$2 $3')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // OpenFDA API Base
 const FDA_API = 'https://api.fda.gov/drug/label.json';
 // e약은요 API (공공데이터포털)
@@ -279,7 +302,7 @@ function renderSearchResults(results) {
     if (item.source === 'eyak') {
       const d = item.data;
       const name = d.itemName || '-';
-      const efcy = (d.efcyQesitm || '').substring(0, 100);
+      const efcy = addSpacing((d.efcyQesitm || '').substring(0, 100));
       return `
         <div class="drug-card" data-id="${i}" data-source="eyak">
           <h3>${name}</h3>
@@ -291,7 +314,7 @@ function renderSearchResults(results) {
     if (item.source === 'korean') {
       const d = item.data;
       const name = d.name || '-';
-      const ingredient = (d.ingredient || '-').substring(0, 80);
+      const ingredient = addSpacing((d.ingredient || '-').substring(0, 80));
       const category = d.category || '';
       return `
         <div class="drug-card" data-id="${i}" data-source="korean">
@@ -357,7 +380,7 @@ function showDetail(source, drug) {
       ${sections.map(s => `
         <div class="detail-section">
           <h3>${s.title}</h3>
-          <p>${s.data.replace(/\n/g, '<br>')}</p>
+          <p>${addSpacing(s.data).replace(/\n/g, '<br>')}</p>
         </div>
       `).join('')}
       <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요)</p>
@@ -390,13 +413,13 @@ function showDetail(source, drug) {
           ${d.nameEn ? `<p><strong>품목 영문명:</strong> ${d.nameEn}</p>` : ''}
           <p><strong>업체명:</strong> ${d.company || '-'}</p>
           <p><strong>전문/일반:</strong> ${d.type || '-'}</p>
-          <p><strong>주성분:</strong> ${(d.ingredient || '-').replace(/\|/g, ' / ')}</p>
+          <p><strong>주성분:</strong> ${addSpacing((d.ingredient || '-').replace(/\|/g, ' / '))}</p>
           ${d.category ? `<p><strong>분류:</strong> ${d.category}</p>` : ''}
         </div>
         ${sections.map(s => `
           <div class="detail-section">
             <h3>${s.title}</h3>
-            <p>${s.data.replace(/\n/g, '<br>')}</p>
+            <p>${addSpacing(s.data).replace(/\n/g, '<br>')}</p>
           </div>
         `).join('')}
         <p class="detail-source">출처: ${ext === d ? '식품의약품안전처 의약품개요정보(e약은요) merged' : '식품의약품안전처 의약품통합정보시스템(의약품안전나라)'}</p>
@@ -414,7 +437,7 @@ function showDetail(source, drug) {
         </div>
         <div class="detail-section">
           <h3>주성분</h3>
-          <p>${(d.ingredient || '정보 없음').replace(/\//g, ' / ')}</p>
+          <p>${addSpacing((d.ingredient || '정보 없음').replace(/\//g, ' / '))}</p>
         </div>
         ${d.category ? `
         <div class="detail-section">
