@@ -51,6 +51,39 @@ const DRUG_EXTENDED_INFO = {
   }
 };
 
+// 영문 성분명 → 상호작용 DB용 한글/영문 매핑
+const INGREDIENT_TO_INTERACTION_NAMES = {
+  "Ibuprofen": ["이부프로펜", "ibuprofen"],
+  "Aspirin": ["아스피린", "aspirin"],
+  "Naproxen": ["나프록센", "naproxen"],
+  "Warfarin": ["와파린", "warfarin"],
+  "Metformin": ["메트포르민", "metformin"],
+  "Omeprazole": ["오메프라졸", "omeprazole"],
+  "Lisinopril": ["리시노프릴", "lisinopril"],
+  "Amlodipine": ["암로디핀", "amlodipine"],
+  "Losartan": ["로사르탄", "losartan"],
+  "Atorvastatin": ["아토르바스타틴", "atorvastatin"],
+  "Clopidogrel": ["클로피도그렐", "clopidogrel"],
+  "Gabapentin": ["가바펜틴", "gabapentin"],
+  "Alprazolam": ["알프라졸람", "alprazolam"],
+  "Levofloxacin": ["레보플록사신", "levofloxacin"],
+  "Amoxicillin": ["아모시실린", "amoxicillin"],
+  "Ampicillin": ["암피실린", "ampicillin"],
+  "Cimetidine": ["시메티딘", "cimetidine"],
+};
+
+// 제품명 → 상호작용 검사용 성분 매핑 (성분 함유 제품)
+const DRUG_INTERACTION_INGREDIENTS = {
+  "게보린": ["아스피린"],
+  "어드빌": ["이부프로펜"],
+  "누로펜": ["이부프로펜"],
+  "이브": ["이부프로펜"],
+  "부루펜": ["이부프로펜"],
+  "아스피린정": ["아스피린"],
+  "바이에르": ["아스피린"],
+  "로시피린": ["아스피린"],
+};
+
 // 약물 상호작용 데이터 (주요 상호작용 - 한글/영문)
 const INTERACTION_DATABASE = {
   "warfarin": ["아스피린", "이부프로펜", "naproxen", "나프록센", "비타민K"],

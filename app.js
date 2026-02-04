@@ -1009,7 +1009,65 @@ function renderInteractionList() {
 }
 
 function normalizeDrugName(name) {
-  return name.toLowerCase().replace(/\s/g, '');
+  return (name || '').toLowerCase().replace(/\s/g, '');
+}
+
+// 의약품명 → 상호작용 검사용 이름 목록 (제품명 + 성분 + 동의어)
+function getInteractionRelevantNames(drugName) {
+  const names = new Set([drugName]);
+  const lower = normalizeDrugName(drugName);
+
+  // SEARCH_TERM_ALIASES: 동의어 (게보린↔아스피린 등)
+  if (typeof SEARCH_TERM_ALIASES !== 'undefined') {
+    for (const [key, aliases] of Object.entries(SEARCH_TERM_ALIASES)) {
+      if (normalizeDrugName(key) === lower || aliases.some(a => normalizeDrugName(a) === lower)) {
+        names.add(key);
+        aliases.forEach(a => names.add(a));
+      }
+    }
+  }
+
+  // DRUG_INTERACTION_INGREDIENTS: 성분 함유 제품 (어드빌→이부프로펜 등)
+  if (typeof DRUG_INTERACTION_INGREDIENTS !== 'undefined') {
+    for (const [product, ingredients] of Object.entries(DRUG_INTERACTION_INGREDIENTS)) {
+      if (lower.includes(normalizeDrugName(product)) || normalizeDrugName(product).includes(lower)) {
+        ingredients.forEach(i => names.add(i));
+      }
+    }
+  }
+
+  // PILL_DATABASE: 품목명 → 주성분
+  if (typeof PILL_DATABASE !== 'undefined') {
+    PILL_DATABASE.filter(p => {
+      const pn = normalizeDrugName(p.name);
+      return pn.includes(lower) || lower.includes(pn);
+    }).forEach(p => names.add(p.ingredient));
+  }
+
+  // KOREAN_DRUG_DATABASE: 품목명 → 주성분 (영문 성분명 포함)
+  if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
+    KOREAN_DRUG_DATABASE.forEach(d => {
+      const dn = normalizeDrugName(d.name);
+      if (!dn || (!dn.includes(lower) && !lower.includes(dn))) return;
+      const ing = (d.ingredient || '').split(/[\/|,]/).map(s => s.trim()).filter(Boolean);
+      ing.forEach(i => {
+        names.add(i);
+        if (typeof INGREDIENT_TO_INTERACTION_NAMES !== 'undefined' && INGREDIENT_TO_INTERACTION_NAMES[i]) {
+          INGREDIENT_TO_INTERACTION_NAMES[i].forEach(n => names.add(n));
+        }
+      });
+    });
+  }
+
+  return Array.from(names);
+}
+
+function namesMatchInteraction(nameSet, target) {
+  const targetNorm = normalizeDrugName(target);
+  return nameSet.some(n => {
+    const nNorm = normalizeDrugName(n);
+    return nNorm === targetNorm || targetNorm.includes(nNorm) || nNorm.includes(targetNorm);
+  });
 }
 
 checkInteractionBtn.addEventListener('click', () => {
@@ -1020,16 +1078,15 @@ checkInteractionBtn.addEventListener('click', () => {
   const found = [];
   for (let i = 0; i < interactionDrugs.length; i++) {
     for (let j = i + 1; j < interactionDrugs.length; j++) {
-      const d1 = normalizeDrugName(interactionDrugs[i]);
-      const d2 = normalizeDrugName(interactionDrugs[j]);
+      const names1 = getInteractionRelevantNames(interactionDrugs[i]);
+      const names2 = getInteractionRelevantNames(interactionDrugs[j]);
       for (const [drug, interactions] of Object.entries(INTERACTION_DATABASE)) {
-        const drugNorm = normalizeDrugName(drug);
-        const match1 = drugNorm.includes(d1) || d1.includes(drugNorm);
-        const match2 = interactions.some(int => {
-          const intNorm = normalizeDrugName(int);
-          return intNorm.includes(d2) || d2.includes(intNorm);
-        });
-        if (match1 && match2) found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 상호작용 가능`);
+        const match1 = namesMatchInteraction(names1, drug);
+        const match2 = interactions.some(int => namesMatchInteraction(names2, int));
+        if (match1 && match2) {
+          found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 상호작용 가능`);
+          break;
+        }
       }
     }
   }
