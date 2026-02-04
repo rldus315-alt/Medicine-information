@@ -1,0 +1,12 @@
+# IDE
+.cursor/
+
+# Local config (API keys - use config.js.example)
+csv-path.txt
+merged_data.csv
+medicine_data.csv
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db

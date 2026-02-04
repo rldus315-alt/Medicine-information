@@ -88,6 +88,7 @@ body {
   display: none;
 }
 .search-suggestions.visible { display: block; }
+.search-hint { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; }
 .suggestion-item {
   padding: 0.65rem 1rem;
   cursor: pointer;
@@ -97,6 +98,7 @@ body {
 }
 .suggestion-item:last-child { border-bottom: none; }
 .suggestion-item:hover { background: var(--bg); color: var(--primary); }
+.suggestion-header { padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--text-muted); border-bottom: 1px solid var(--border); }
 
 .search-box input, .interaction-input input, .medication-input input, .pill-form input {
   flex: 1;
@@ -152,6 +154,7 @@ body {
 .drug-card p { font-size: 0.9rem; color: var(--text-muted); }
 .drug-card .pill-meta { font-size: 0.85rem; color: var(--primary); }
 .drug-card .drug-category { font-size: 0.8rem; color: var(--primary); }
+.drug-card .drug-desc { font-size: 0.9rem; color: var(--text-muted); }
 
 .detail-content {
   background: var(--card);

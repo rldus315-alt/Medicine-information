@@ -1,9 +1,38 @@
 // OpenFDA API Base
 const FDA_API = 'https://api.fda.gov/drug/label.json';
+// e약은요 API (공공데이터포털)
+const EYAK_API = 'http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
 const CORS_PROXIES = [
   (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
   (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u)
 ];
+
+// e약은요 API 호출 (API 키 필요)
+async function fetchEyakApi(itemName) {
+  const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
+  if (!apiKey) return null;
+  const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemName=${encodeURIComponent(itemName)}&numOfRows=20&pageNo=1&type=json`;
+  const tryFetch = async (targetUrl) => {
+    const res = await fetch(targetUrl);
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    if (data.header?.resultCode !== '00' && data.header?.resultCode !== '0') return null;
+    let items = data.body?.items;
+    if (!items) return [];
+    if (!Array.isArray(items)) items = items ? [items] : [];
+    return items;
+  };
+  try {
+    return await tryFetch(url);
+  } catch (e) {
+    for (const toProxyUrl of CORS_PROXIES) {
+      try {
+        return await tryFetch(toProxyUrl(url));
+      } catch (_) { continue; }
+    }
+    return null;
+  }
+}
 
 // CORS 우회 - 직접 요청 실패 시 프록시 사용
 async function fetchFDA(url) {
@@ -103,19 +132,35 @@ function searchKoreanDrugs(query) {
   return Array.from(seen.values()).slice(0, 30);
 }
 
-// Search - 한국 의약품 우선, 없으면 OpenFDA
+// Search - e약은요 API(키 있을 때) → 로컬 DB → OpenFDA 순으로 검색
 async function searchDrugs(query) {
   if (!query.trim()) return;
   searchResults.innerHTML = '<div class="loading">검색 중...</div>';
-  let koreanResults = [];
+  const q = query.trim();
+
+  // 1) e약은요 API (config.js에 API 키 설정 시)
+  const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
+  if (apiKey) {
+    try {
+      const eyakItems = await fetchEyakApi(q);
+      if (eyakItems && eyakItems.length > 0) {
+        renderSearchResults(eyakItems.map(d => ({ source: 'eyak', data: d })));
+        return;
+      }
+    } catch (_) { /* fallback */ }
+  }
+
+  // 2) 로컬 한국 의약품 DB (5,600+건)
   if (typeof KOREAN_DRUG_DATABASE !== 'undefined') {
-    koreanResults = searchKoreanDrugs(query);
+    const koreanResults = searchKoreanDrugs(q);
+    if (koreanResults.length > 0) {
+      renderSearchResults(koreanResults.map(d => ({ source: 'korean', data: d })));
+      return;
+    }
   }
-  if (koreanResults.length > 0) {
-    renderSearchResults(koreanResults.map(d => ({ source: 'korean', data: d })));
-    return;
-  }
-  const terms = toSearchTerms(query);
+
+  // 3) OpenFDA API (영문 검색)
+  const terms = toSearchTerms(q);
   let results = [];
   for (const term of terms) {
     try {
@@ -138,6 +183,18 @@ async function searchDrugs(query) {
 
 function renderSearchResults(results) {
   searchResults.innerHTML = results.map((item, i) => {
+    if (item.source === 'eyak') {
+      const d = item.data;
+      const name = d.itemName || '-';
+      const efcy = (d.efcyQesitm || '').substring(0, 100);
+      return `
+        <div class="drug-card" data-id="${i}" data-source="eyak">
+          <h3>${name}</h3>
+          <p>${d.entpName || ''}</p>
+          ${efcy ? `<p class="drug-desc">${efcy}${(d.efcyQesitm || '').length > 100 ? '...' : ''}</p>` : ''}
+        </div>
+      `;
+    }
     if (item.source === 'korean') {
       const d = item.data;
       const name = d.name || '-';
@@ -172,30 +229,90 @@ function renderSearchResults(results) {
 }
 
 function showDetail(source, drug) {
-  if (source === 'korean') {
+  if (source === 'eyak') {
     const d = drug;
-    const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '';
+    const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${d.itemName}" class="drug-image" onerror="this.style.display='none'">` : '';
+    const sections = [
+      { title: '효능·효과', data: d.efcyQesitm },
+      { title: '사용법', data: d.useMethodQesitm },
+      { title: '주의사항 (경고)', data: d.atpnWarnQesitm },
+      { title: '주의사항', data: d.atpnQesitm },
+      { title: '약물·음식 상호작용', data: d.intrcQesitm },
+      { title: '부작용', data: d.seQesitm },
+      { title: '보관법', data: d.depositMethodQesitm },
+    ].filter(s => s.data && s.data.trim());
     detailContent.innerHTML = `
       <div class="detail-section">
         ${imgHtml}
         <h3>기본 정보</h3>
-        <p><strong>품목명:</strong> ${d.name || '-'}</p>
-        ${d.nameEn ? `<p><strong>품목 영문명:</strong> ${d.nameEn}</p>` : ''}
-        <p><strong>업체명:</strong> ${d.company || '-'}</p>
-        <p><strong>전문/일반:</strong> ${d.type || '-'}</p>
+        <p><strong>제품명:</strong> ${d.itemName || '-'}</p>
+        <p><strong>업체명:</strong> ${d.entpName || '-'}</p>
+        ${d.itemSeq ? `<p><strong>품목기준코드:</strong> ${d.itemSeq}</p>` : ''}
       </div>
-      <div class="detail-section">
-        <h3>주성분</h3>
-        <p>${(d.ingredient || '정보 없음').replace(/\//g, ' / ')}</p>
-      </div>
-      ${d.category ? `
-      <div class="detail-section">
-        <h3>분류</h3>
-        <p>${d.category}</p>
-      </div>
-      ` : ''}
-      <p class="detail-source">출처: 식품의약품안전처 의약품통합정보시스템</p>
+      ${sections.map(s => `
+        <div class="detail-section">
+          <h3>${s.title}</h3>
+          <p>${s.data.replace(/\n/g, '<br>')}</p>
+        </div>
+      `).join('')}
+      <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요)</p>
     `;
+  } else if (source === 'korean') {
+    const d = drug;
+    const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '';
+    const hasExtended = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm;
+    if (hasExtended) {
+      const sections = [
+        { title: '효능·효과', data: d.efcyQesitm },
+        { title: '사용법', data: d.useMethodQesitm },
+        { title: '주의사항 (경고)', data: d.atpnWarnQesitm },
+        { title: '주의사항', data: d.atpnQesitm },
+        { title: '약물·음식 상호작용', data: d.intrcQesitm },
+        { title: '부작용', data: d.seQesitm },
+        { title: '보관법', data: d.depositMethodQesitm },
+      ].filter(s => s.data && s.data.trim());
+      detailContent.innerHTML = `
+        <div class="detail-section">
+          ${imgHtml}
+          <h3>기본 정보</h3>
+          <p><strong>제품명:</strong> ${d.name || '-'}</p>
+          ${d.nameEn ? `<p><strong>품목 영문명:</strong> ${d.nameEn}</p>` : ''}
+          <p><strong>업체명:</strong> ${d.company || '-'}</p>
+          <p><strong>전문/일반:</strong> ${d.type || '-'}</p>
+          <p><strong>주성분:</strong> ${(d.ingredient || '-').replace(/\|/g, ' / ')}</p>
+          ${d.category ? `<p><strong>분류:</strong> ${d.category}</p>` : ''}
+        </div>
+        ${sections.map(s => `
+          <div class="detail-section">
+            <h3>${s.title}</h3>
+            <p>${s.data.replace(/\n/g, '<br>')}</p>
+          </div>
+        `).join('')}
+        <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요) merged</p>
+      `;
+    } else {
+      detailContent.innerHTML = `
+        <div class="detail-section">
+          ${imgHtml}
+          <h3>기본 정보</h3>
+          <p><strong>품목명:</strong> ${d.name || '-'}</p>
+          ${d.nameEn ? `<p><strong>품목 영문명:</strong> ${d.nameEn}</p>` : ''}
+          <p><strong>업체명:</strong> ${d.company || '-'}</p>
+          <p><strong>전문/일반:</strong> ${d.type || '-'}</p>
+        </div>
+        <div class="detail-section">
+          <h3>주성분</h3>
+          <p>${(d.ingredient || '정보 없음').replace(/\//g, ' / ')}</p>
+        </div>
+        ${d.category ? `
+        <div class="detail-section">
+          <h3>분류</h3>
+          <p>${d.category}</p>
+        </div>
+        ` : ''}
+        <p class="detail-source">출처: 식품의약품안전처 의약품통합정보시스템</p>
+      `;
+    }
   } else {
     const brand = drug.openfda?.brand_name?.[0] || '알 수 없음';
     const generic = drug.openfda?.generic_name?.[0] || '-';
@@ -235,10 +352,35 @@ backBtn.addEventListener('click', () => {
   document.getElementById('viewSearch').classList.remove('hidden');
 });
 
-searchBtn.addEventListener('click', () => searchDrugs(searchInput.value));
-searchInput.addEventListener('keypress', e => { if (e.key === 'Enter') searchDrugs(searchInput.value); });
+// 최근 검색어 저장 (최대 10개)
+const RECENT_SEARCHES_KEY = 'medicine_recent_searches';
+function getRecentSearches() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]');
+  } catch (_) { return []; }
+}
+function saveRecentSearch(term) {
+  if (!term || !term.trim()) return;
+  const recent = getRecentSearches().filter(t => t !== term);
+  recent.unshift(term.trim());
+  localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(recent.slice(0, 10)));
+}
 
-// 자동검색어 추천 (입력 시 실시간)
+// 인기 검색어 (DB에서 자주 검색되는 품목 샘플)
+const POPULAR_TERMS = ['타이레놀', '게보린', '판콜', '아스피린', '이부프로펜', '오메가3', '비타민D', '우루사', '뮤코팜'];
+
+searchBtn.addEventListener('click', () => {
+  const q = searchInput.value.trim();
+  if (q) { saveRecentSearch(q); searchDrugs(q); }
+});
+searchInput.addEventListener('keypress', e => {
+  if (e.key === 'Enter') {
+    const q = searchInput.value.trim();
+    if (q) { saveRecentSearch(q); searchDrugs(q); }
+  }
+});
+
+// 검색어 추천 (자동완성 + 추천/최근 검색어)
 function initAutocomplete() {
   const searchSuggestions = document.getElementById('searchSuggestions');
   if (!searchSuggestions) return;
@@ -250,7 +392,8 @@ function initAutocomplete() {
     const matches = KOREAN_DRUG_DATABASE.filter(d => {
       const name = (d.name || '').toLowerCase();
       const nameEn = (d.nameEn || '').toLowerCase();
-      return name.includes(q) || nameEn.includes(q);
+      const ingredient = (d.ingredient || '').toLowerCase();
+      return name.includes(q) || nameEn.includes(q) || ingredient.includes(q);
     });
     const seen = new Set();
     return matches.filter(d => {
@@ -261,22 +404,37 @@ function initAutocomplete() {
     }).slice(0, 8);
   }
 
-  function showSuggestions(items) {
+  function getQuickTerms() {
+    const recent = getRecentSearches();
+    const combined = [...recent];
+    POPULAR_TERMS.forEach(t => { if (!combined.includes(t)) combined.push(t); });
+    return combined.slice(0, 10);
+  }
+
+  function showSuggestions(items, isQuickTerms = false) {
     if (!items.length) {
       searchSuggestions.classList.remove('visible');
       searchSuggestions.innerHTML = '';
       return;
     }
-    searchSuggestions.innerHTML = items.map(d => `
-      <div class="suggestion-item" data-name="${(d.name || '').replace(/"/g, '&quot;')}">${d.name || '-'}</div>
-    `).join('');
+    if (isQuickTerms) {
+      searchSuggestions.innerHTML = '<div class="suggestion-header">추천 검색어</div>' + items.map(term => `
+        <div class="suggestion-item suggestion-quick" data-name="${(term || '').replace(/"/g, '&quot;')}">${term || '-'}</div>
+      `).join('');
+    } else {
+      searchSuggestions.innerHTML = items.map(d => `
+        <div class="suggestion-item" data-name="${(d.name || '').replace(/"/g, '&quot;')}">${d.name || '-'}</div>
+      `).join('');
+    }
     searchSuggestions.classList.add('visible');
     searchSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
       el.addEventListener('click', () => {
-        searchInput.value = el.dataset.name;
+        const term = el.dataset.name;
+        searchInput.value = term;
         searchSuggestions.classList.remove('visible');
         searchSuggestions.innerHTML = '';
-        searchDrugs(el.dataset.name);
+        saveRecentSearch(term);
+        searchDrugs(term);
       });
     });
   }
@@ -289,12 +447,16 @@ function initAutocomplete() {
       searchSuggestions.innerHTML = '';
       return;
     }
-    suggestTimeout = setTimeout(() => showSuggestions(getSuggestions(q)), 150);
+    suggestTimeout = setTimeout(() => showSuggestions(getSuggestions(q)), 120);
   });
 
   searchInput.addEventListener('focus', () => {
     const q = searchInput.value.trim();
-    if (q) showSuggestions(getSuggestions(q));
+    if (q) {
+      showSuggestions(getSuggestions(q));
+    } else {
+      showSuggestions(getQuickTerms(), true);
+    }
   });
 
   searchInput.addEventListener('blur', () => {
