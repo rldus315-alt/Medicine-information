@@ -353,16 +353,21 @@ function showDetail(source, drug) {
   } else if (source === 'korean') {
     const d = drug;
     const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '';
-    const hasExtended = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm;
+    let ext = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm ? d : null;
+    if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
+      const extInfo = DRUG_EXTENDED_INFO[d.name] || DRUG_EXTENDED_INFO[d.ingredient];
+      if (extInfo) ext = { ...d, ...extInfo };
+    }
+    const hasExtended = ext && (ext.efcyQesitm || ext.useMethodQesitm || ext.atpnQesitm || ext.intrcQesitm || ext.seQesitm || ext.depositMethodQesitm);
     if (hasExtended) {
       const sections = [
-        { title: '효능·효과', data: d.efcyQesitm },
-        { title: '사용법', data: d.useMethodQesitm },
-        { title: '주의사항 (경고)', data: d.atpnWarnQesitm },
-        { title: '주의사항', data: d.atpnQesitm },
-        { title: '약물·음식 상호작용', data: d.intrcQesitm },
-        { title: '부작용', data: d.seQesitm },
-        { title: '보관법', data: d.depositMethodQesitm },
+        { title: '효능·효과', data: ext.efcyQesitm },
+        { title: '사용법', data: ext.useMethodQesitm },
+        { title: '주의사항 (경고)', data: ext.atpnWarnQesitm },
+        { title: '주의사항', data: ext.atpnQesitm },
+        { title: '약물·음식 상호작용', data: ext.intrcQesitm },
+        { title: '부작용', data: ext.seQesitm },
+        { title: '보관법', data: ext.depositMethodQesitm },
       ].filter(s => s.data && s.data.trim());
       detailContent.innerHTML = `
         <div class="detail-section">
@@ -381,7 +386,7 @@ function showDetail(source, drug) {
             <p>${s.data.replace(/\n/g, '<br>')}</p>
           </div>
         `).join('')}
-        <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요) merged</p>
+        <p class="detail-source">출처: ${ext === d ? '식품의약품안전처 의약품개요정보(e약은요) merged' : '식품의약품안전처 의약품통합정보시스템(의약품안전나라)'}</p>
       `;
     } else {
       detailContent.innerHTML = `
