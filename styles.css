@@ -221,6 +221,28 @@ body {
 .drug-card .pill-meta { font-size: 0.85rem; color: var(--primary); }
 .drug-card .drug-category { font-size: 0.8rem; color: var(--primary); }
 .drug-card .drug-desc { font-size: 0.9rem; color: var(--text-muted); }
+.drug-card { position: relative; }
+.drug-card-warning {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--warning);
+  background: rgba(217,119,6,0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.contraindication-alert {
+  background: #fef3c7;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.contraindication-alert strong { color: var(--warning); }
+.contraindication-msg { margin: 0.5rem 0 0; font-size: 0.9rem; line-height: 1.5; }
+.contraindication-msg:first-of-type { margin-top: 0.25rem; }
 
 .detail-content {
   background: var(--card);
@@ -410,6 +432,94 @@ body {
 .interaction-result .success { color: var(--success); }
 
 .medication-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+/* 건강정보 프로필 */
+.profile-form {
+  background: var(--card);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.profile-form input[type="text"],
+.profile-form select {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  font-family: inherit;
+  margin-top: 0.35rem;
+}
+.profile-form .btn { margin-top: 1rem; }
+.profile-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 0.5rem;
+}
+.profile-checkboxes label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-weight: 400;
+}
+.profile-saved-msg {
+  font-size: 0.9rem;
+  color: var(--success);
+  margin-top: 0.5rem;
+  display: none;
+}
+
+/* 용어 사전 툴팁 */
+.term-tooltip {
+  border-bottom: 1px dotted var(--primary);
+  cursor: help;
+  text-decoration: none;
+}
+
+/* 용어 사전 뷰 */
+.glossary-search-wrapper {
+  margin-bottom: 1rem;
+}
+.glossary-search-wrapper input {
+  width: 100%;
+  max-width: 400px;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+.glossary-list {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.glossary-item {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.glossary-item:last-child { border-bottom: none; }
+.glossary-term {
+  font-weight: 600;
+  color: var(--primary);
+  margin: 0 0 0.35rem 0;
+  font-size: 1rem;
+}
+.glossary-def {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+.glossary-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
 
 h2 { font-size: 1.25rem; margin-bottom: 0.25rem; }
 .subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }

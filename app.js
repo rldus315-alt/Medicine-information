@@ -67,6 +67,28 @@ function addSpacing(text) {
     .trim();
 }
 
+// 용어 사전: 의학 용어를 쉬운 설명으로 툴팁
+function addTermTooltips(html) {
+  if (!html || typeof html !== 'string') return html;
+  if (typeof MEDICAL_TERMS_DICTIONARY === 'undefined') return html;
+  const terms = Object.keys(MEDICAL_TERMS_DICTIONARY).sort((a, b) => b.length - a.length);
+  const placeholders = [];
+  let result = html;
+  terms.forEach((term, idx) => {
+    const explanation = MEDICAL_TERMS_DICTIONARY[term];
+    if (!explanation) return;
+    const ph = `\x01T${idx}\x01`;
+    placeholders.push({ ph, term, explanation });
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp(escaped, 'g'), ph);
+  });
+  placeholders.forEach(({ ph, term, explanation }) => {
+    const span = `<span class="term-tooltip" title="${(explanation + '').replace(/"/g, '&quot;')}">${term}</span>`;
+    result = result.split(ph).join(span);
+  });
+  return result;
+}
+
 // 복약 안내문 픽토그램 (키워드 → 아이콘)
 const MED_PICTOGRAMS = [
   { id: 'alcohol', keywords: /음주|알코올|술|세\s*잔\s*이상|음주\s*금지/i, label: '음주 금지', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10h8l-2 10h-4L12 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="22" x2="24" y2="22" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="8" x2="26" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' },
@@ -100,7 +122,7 @@ function renderPictograms(pictograms) {
 
 // 복약 안내문 생성 (열람·인쇄용)
 function generateMedicationGuide(source, drug) {
-  const fmt = (t) => (t && t.trim()) ? addSpacing(String(t).trim()).replace(/\n/g, '<br>') : '-';
+  const fmt = (t) => (t && t.trim()) ? addTermTooltips(addSpacing(String(t).trim()).replace(/\n/g, '<br>')) : '-';
   let name = '', company = '', ingredient = '', sections = [];
 
   if (source === 'eyak') {
@@ -315,6 +337,69 @@ const viewDetail = document.getElementById('viewDetail');
 const detailContent = document.getElementById('detailContent');
 const backBtn = document.getElementById('backBtn');
 let currentDetailDrug = null; // { source, data } - 복약 안내문 생성용
+
+// 개인별 금기 알림 - 사용자 건강 정보
+const USER_PROFILE_KEY = 'medicine_user_profile';
+let userProfile = { conditions: [], allergy: '', pregnancy: '' };
+
+function loadUserProfile() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(USER_PROFILE_KEY) || '{}');
+    userProfile = {
+      conditions: Array.isArray(saved.conditions) ? saved.conditions : [],
+      allergy: (saved.allergy || '').trim(),
+      pregnancy: (saved.pregnancy || '').trim()
+    };
+  } catch (_) { userProfile = { conditions: [], allergy: '', pregnancy: '' }; }
+}
+
+function saveUserProfile() {
+  localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(userProfile));
+}
+
+function checkContraindications(drugName, drug) {
+  const warnings = [];
+  if (!drugName || typeof CONTRAINDICATION_RULES === 'undefined') return warnings;
+  const drugNames = getInteractionRelevantNames ? getInteractionRelevantNames(drugName) : [drugName];
+  const drugNamesLower = drugNames.map(n => (n || '').toLowerCase());
+
+  const hasDrug = (drugKey) => drugNamesLower.some(dn => dn.includes((drugKey || '').toLowerCase()) || (drugKey || '').toLowerCase().includes(dn));
+
+  userProfile.conditions.forEach(cond => {
+    const rule = CONTRAINDICATION_RULES[cond];
+    if (!rule || !rule.drugs) return;
+    if (rule.drugs.some(d => hasDrug(d))) warnings.push({ type: cond, message: rule.message });
+  });
+
+  if (userProfile.pregnancy) {
+    const rule = CONTRAINDICATION_RULES[userProfile.pregnancy];
+    if (rule && rule.drugs.some(d => hasDrug(d))) warnings.push({ type: userProfile.pregnancy, message: rule.message });
+  }
+
+  if (userProfile.allergy) {
+    const allergyTerms = userProfile.allergy.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+    for (const term of allergyTerms) {
+      const key = Object.keys(ALLERGY_INGREDIENTS || {}).find(k =>
+        k.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(k.toLowerCase()));
+      if (key && ALLERGY_INGREDIENTS[key]) {
+        const group = ALLERGY_INGREDIENTS[key];
+        if (group.some(g => drugNamesLower.some(dn => dn.includes(g.toLowerCase()) || g.toLowerCase().includes(dn)))) {
+          warnings.push({ type: '알레르기', message: `알레르기 주의: ${key} 계열 성분이 포함될 수 있습니다. 반드시 의사와 상담하세요.` });
+        }
+      }
+    }
+  }
+
+  return warnings;
+}
+
+function renderContraindicationWarnings(warnings) {
+  if (!warnings || warnings.length === 0) return '';
+  return `<div class="contraindication-alert">
+    <strong>⚠️ 개인 맞춤 경고</strong>
+    ${warnings.map(w => `<p class="contraindication-msg">${w.message}</p>`).join('')}
+  </div>`;
+}
 
 // Navigation
 navBtns.forEach(btn => {
@@ -531,8 +616,11 @@ function renderSearchResults(results) {
       const d = item.data;
       const name = d.itemName || '-';
       const efcy = addSpacing((d.efcyQesitm || '').substring(0, 100));
+      const warnings = checkContraindications(name, d);
+      const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
       return `
         <div class="drug-card" data-id="${i}" data-source="eyak">
+          ${warnBadge}
           <h3>${name}</h3>
           <p>${d.entpName || ''}</p>
           ${efcy ? `<p class="drug-desc">${efcy}${(d.efcyQesitm || '').length > 100 ? '...' : ''}</p>` : ''}
@@ -544,8 +632,11 @@ function renderSearchResults(results) {
       const name = d.name || '-';
       const ingredient = addSpacing((d.ingredient || '-').substring(0, 80));
       const category = d.category || '';
+      const warnings = checkContraindications(name, d);
+      const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
       return `
         <div class="drug-card" data-id="${i}" data-source="korean">
+          ${warnBadge}
           <h3>${name}</h3>
           <p>성분: ${ingredient}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
           ${category ? `<p class="drug-category">${addSpacing(category)}</p>` : ''}
@@ -556,8 +647,11 @@ function renderSearchResults(results) {
     const brand = drug.openfda?.brand_name?.[0] || '-';
     const generic = drug.openfda?.generic_name?.[0] || '-';
     const purpose = drug.purpose?.[0]?.substring(0, 80) || drug.indications_and_usage?.[0]?.substring(0, 80) || '';
+    const warnings = checkContraindications(brand || generic, drug);
+    const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
     return `
       <div class="drug-card" data-id="${i}" data-source="fda">
+        ${warnBadge}
         <h3>${brand}</h3>
         <p>성분: ${generic}</p>
         ${purpose ? `<p>${purpose}...</p>` : ''}
@@ -583,6 +677,8 @@ function addToMyMedications(name) {
 function showDetail(source, drug) {
   currentDetailDrug = { source, data: drug };
   const drugName = source === 'eyak' ? (drug.itemName || '') : source === 'korean' ? (drug.name || '') : (drug.openfda?.brand_name?.[0] || drug.openfda?.generic_name?.[0] || '');
+  const contraindicationWarnings = checkContraindications(drugName, drug);
+  const contraindicationHtml = renderContraindicationWarnings(contraindicationWarnings);
   const addToMedBtn = drugName ? `<button class="btn btn-primary add-to-med-btn" data-name="${(drugName + '').replace(/"/g, '&quot;')}">💊 내 복용약에 저장</button>` : '';
   const medGuideBtn = `<button class="btn btn-secondary add-to-med-btn med-guide-btn" type="button">📋 복약 안내문</button>`;
 
@@ -599,6 +695,7 @@ function showDetail(source, drug) {
       { title: '보관법', data: d.depositMethodQesitm },
     ].filter(s => s.data && s.data.trim());
     detailContent.innerHTML = `
+      ${contraindicationHtml}
       <div class="detail-section">
         <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         ${imgHtml}
@@ -610,7 +707,7 @@ function showDetail(source, drug) {
       ${sections.map(s => `
         <div class="detail-section">
           <h3>${s.title}</h3>
-          <p>${addSpacing(s.data).replace(/\n/g, '<br>')}</p>
+          <p>${addTermTooltips(addSpacing(s.data).replace(/\n/g, '<br>'))}</p>
         </div>
       `).join('')}
       <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요)</p>
@@ -635,6 +732,7 @@ function showDetail(source, drug) {
         { title: '보관법', data: ext.depositMethodQesitm },
       ].filter(s => s.data && s.data.trim());
       detailContent.innerHTML = `
+        ${contraindicationHtml}
         <div class="detail-section">
           <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
           ${imgHtml}
@@ -649,13 +747,14 @@ function showDetail(source, drug) {
         ${sections.map(s => `
           <div class="detail-section">
             <h3>${s.title}</h3>
-            <p>${addSpacing(s.data).replace(/\n/g, '<br>')}</p>
+            <p>${addTermTooltips(addSpacing(s.data).replace(/\n/g, '<br>'))}</p>
           </div>
         `).join('')}
         <p class="detail-source">출처: ${ext === d ? '식품의약품안전처 의약품개요정보(e약은요) merged' : '식품의약품안전처 의약품통합정보시스템(의약품안전나라)'}</p>
       `;
     } else {
       detailContent.innerHTML = `
+        ${contraindicationHtml}
         <div class="detail-section">
           <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
           ${imgHtml}
@@ -691,6 +790,7 @@ function showDetail(source, drug) {
       { title: '임신·수유', data: drug.pregnancy_or_breast_feeding?.[0] || '정보 없음' },
     ];
     detailContent.innerHTML = `
+      ${contraindicationHtml}
       <div class="detail-section">
         <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         <h3>기본 정보</h3>
@@ -700,7 +800,7 @@ function showDetail(source, drug) {
       ${sections.map(s => `
         <div class="detail-section">
           <h3>${s.title}</h3>
-          <p>${s.data.substring(0, 1500)}${s.data.length > 1500 ? '...' : ''}</p>
+          <p>${addTermTooltips((s.data.substring(0, 1500) + (s.data.length > 1500 ? '...' : '')).replace(/\n/g, '<br>'))}</p>
         </div>
       `).join('')}
     `;
@@ -1355,3 +1455,64 @@ checkAllergyBtn.addEventListener('click', () => {
 });
 
 renderMedicationList();
+
+// 건강정보(개인별 금기 알림) 프로필
+loadUserProfile();
+
+function initProfileForm() {
+  const saveBtn = document.getElementById('saveProfileBtn');
+  const conditionInputs = document.querySelectorAll('input[name="condition"]');
+  const allergyInput = document.getElementById('profileAllergy');
+  const pregnancySelect = document.getElementById('profilePregnancy');
+  const savedMsg = document.getElementById('profileSavedMsg');
+
+  if (!saveBtn) return;
+
+  conditionInputs.forEach(cb => {
+    cb.checked = userProfile.conditions.includes(cb.value);
+  });
+  if (allergyInput) allergyInput.value = userProfile.allergy || '';
+  if (pregnancySelect) pregnancySelect.value = userProfile.pregnancy || '';
+
+  saveBtn.addEventListener('click', () => {
+    userProfile.conditions = Array.from(conditionInputs).filter(cb => cb.checked).map(cb => cb.value);
+    userProfile.allergy = (allergyInput && allergyInput.value || '').trim();
+    userProfile.pregnancy = (pregnancySelect && pregnancySelect.value || '').trim();
+    saveUserProfile();
+    if (savedMsg) {
+      savedMsg.textContent = '저장되었습니다. 약물 검색 시 맞춤 경고가 표시됩니다.';
+      savedMsg.style.display = 'block';
+      savedMsg.classList.add('success');
+      setTimeout(() => { savedMsg.style.display = 'none'; }, 3000);
+    }
+  });
+}
+initProfileForm();
+
+// 용어 사전
+function renderGlossaryList(query) {
+  const listEl = document.getElementById('glossaryList');
+  if (!listEl || typeof MEDICAL_TERMS_DICTIONARY === 'undefined') return;
+  const q = (query || '').trim().toLowerCase();
+  const entries = Object.entries(MEDICAL_TERMS_DICTIONARY)
+    .filter(([term]) => !q || term.toLowerCase().includes(q) || (MEDICAL_TERMS_DICTIONARY[term] || '').toLowerCase().includes(q))
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  listEl.innerHTML = entries.length === 0
+    ? '<p class="glossary-empty">검색 결과가 없습니다.</p>'
+    : entries.map(([term, explanation]) => `
+      <div class="glossary-item">
+        <dt class="glossary-term">${term.replace(/</g, '&lt;')}</dt>
+        <dd class="glossary-def">${explanation.replace(/</g, '&lt;')}</dd>
+      </div>
+    `).join('');
+}
+
+function initGlossary() {
+  const searchInput = document.getElementById('glossarySearch');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => renderGlossaryList(searchInput.value));
+    searchInput.addEventListener('keyup', () => renderGlossaryList(searchInput.value));
+  }
+  renderGlossaryList('');
+}
+initGlossary();
