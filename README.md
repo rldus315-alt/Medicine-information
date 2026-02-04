@@ -14,7 +14,7 @@
 
 ```bash
 # 정적 파일 서버로 실행 (예: Python)
-cd pharma-info
+cd medicine_recommend
 python -m http.server 8080
 
 # 또는 Node.js (npx)
@@ -22,6 +22,13 @@ npx serve .
 ```
 
 브라우저에서 `http://localhost:8080` 접속
+
+## GitHub Pages 배포 (404 해결)
+
+1. 저장소 **Settings** → **Pages** 이동
+2. **Build and deployment** → **Source**를 **GitHub Actions**로 설정
+3. `main` 브랜치에 푸시 시 자동 배포
+4. 배포 후 `https://rldus315-alt.github.io/Medicine-information/` 에서 접속
 
 ## 기술 스택
 
