@@ -204,7 +204,7 @@ function generateMedicationGuide(source, drug) {
       <hr>
       ${sectionHtml}
       <div class="med-guide-footer">
-        <p>투닥(to-DOC) · ※ 본 안내문은 참고용이며, 의료 상담을 대체하지 않습니다. 복용 방법·용량은 처방에 따르고, 궁금한 점은 의사 또는 약사에게 문의하세요.</p>
+        <p>토닥(to-DOC) · ※ 본 안내문은 참고용이며, 의료 상담을 대체하지 않습니다. 복용 방법·용량은 처방에 따르고, 궁금한 점은 의사 또는 약사에게 문의하세요.</p>
       </div>
     </div>
   `;
@@ -233,7 +233,7 @@ function printMedicationGuide() {
     <html lang="ko">
     <head>
       <meta charset="UTF-8">
-      <title>투닥(to-DOC) - 복약 안내문 인쇄</title>
+      <title>토닥(to-DOC) - 복약 안내문 인쇄</title>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
