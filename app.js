@@ -1771,8 +1771,8 @@ function initPharmacy() {
     const QN = document.getElementById('pharmacyName')?.value.trim() || '';
     const mode = document.querySelector('input[name="pharmacyMode"]:checked')?.value || 'api';
 
-    if (!Q0) {
-      resultsEl.innerHTML = '<p class="pharmacy-empty">시·도를 선택해 주세요.</p>';
+    if (!Q0 && !QN) {
+      resultsEl.innerHTML = '<p class="pharmacy-empty">시·도를 선택하거나 약국명을 입력해 주세요.</p>';
       return;
     }
 
