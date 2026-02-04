@@ -641,6 +641,10 @@ body {
 .pharmacy-tel a:hover { text-decoration: underline; }
 .pharmacy-hours { font-size: 0.85rem; color: var(--text-muted); }
 .pharmacy-hours strong { color: var(--text); font-weight: 600; }
+.pharmacy-map-wrap { margin: 0.75rem 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.pharmacy-map-embed { width: 100%; height: 160px; border: none; display: block; }
+.pharmacy-map-link { display: inline-block; margin-top: 0.35rem; font-size: 0.85rem; color: var(--primary); text-decoration: none; }
+.pharmacy-map-link:hover { text-decoration: underline; }
 .pharmacy-empty {
   padding: 2rem;
   text-align: center;

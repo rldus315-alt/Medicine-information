@@ -1626,6 +1626,18 @@ function initPharmacy() {
     }
   });
 
+  function getMapUrl(addr) {
+    const a = (addr || '').trim();
+    if (!a || a === '-') return null;
+    return 'https://www.google.com/maps?q=' + encodeURIComponent(a);
+  }
+  function getMapEmbedHtml(addr) {
+    const a = (addr || '').trim();
+    if (!a || a === '-') return '';
+    const q = encodeURIComponent(a);
+    return '<iframe class="pharmacy-map-embed" src="https://www.google.com/maps?q=' + q + '&output=embed" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>';
+  }
+
   function formatNightPharmacyHours(p) {
     const days = [
       { k: 'mon', l: '월' }, { k: 'tue', l: '화' }, { k: 'wed', l: '수' }, { k: 'thu', l: '목' },
@@ -1783,15 +1795,18 @@ function initPharmacy() {
         return;
       }
       const cardsHtml = items.slice(0, 50).map((p, i) => {
-        const addr = (p.addr || p.addr2 || '').trim() || '-';
+        const addr = ((p.addr || '') + ' ' + (p.addr2 || '')).trim() || '-';
         const tel = (p.tel || '').trim() || '-';
         const hours = formatNightPharmacyHours(p);
+        const mapUrl = getMapUrl(addr);
+        const mapEmbed = getMapEmbedHtml(addr);
         return `
           <div class="pharmacy-card pharmacy-card-night" data-i="${i}">
             <h3 class="pharmacy-name">🌙 ${(p.name+'').replace(/</g, '&lt;')}</h3>
-            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
-            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
             <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
+            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
+            ${mapEmbed ? `<div class="pharmacy-map-wrap">${mapEmbed}${mapUrl ? `<a href="${mapUrl}" target="_blank" rel="noopener" class="pharmacy-map-link">🗺️ 크게 보기</a>` : ''}</div>` : ''}
+            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
           </div>
         `;
       }).join('');
@@ -1808,12 +1823,15 @@ function initPharmacy() {
           const addr = item.dutyAddr || '-';
           const tel = item.dutyTel1 || '-';
           const hours = formatAllPharmacyHours(item);
+          const mapUrl = getMapUrl(addr);
+          const mapEmbed = getMapEmbedHtml(addr);
           return `
           <div class="pharmacy-card" data-i="${i}">
             <h3 class="pharmacy-name">${(name+'').replace(/</g, '&lt;')}</h3>
-            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
-            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
             <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
+            <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
+            ${mapEmbed ? `<div class="pharmacy-map-wrap">${mapEmbed}${mapUrl ? `<a href="${mapUrl}" target="_blank" rel="noopener" class="pharmacy-map-link">🗺️ 크게 보기</a>` : ''}</div>` : ''}
+            ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
           </div>
         `;
         }).join('');
@@ -1850,12 +1868,15 @@ function initPharmacy() {
       const addr = item.dutyAddr || item.dutyaddr || item.DUTYADDR || '-';
       const tel = item.dutyTel1 || item.dutytel1 || item.DUTYTEL1 || '-';
       const hours = formatAllPharmacyHours(item);
+      const mapUrl = getMapUrl(addr);
+      const mapEmbed = getMapEmbedHtml(addr);
       return `
         <div class="pharmacy-card" data-i="${i}">
           <h3 class="pharmacy-name">${(name+'').replace(/</g, '&lt;')}</h3>
-          <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
-          ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
           <p class="pharmacy-hours"><strong>영업시간</strong> ${(hours+'').replace(/</g, '&lt;')}</p>
+          <p class="pharmacy-addr">📍 ${(addr+'').replace(/</g, '&lt;')}</p>
+          ${mapEmbed ? `<div class="pharmacy-map-wrap">${mapEmbed}${mapUrl ? `<a href="${mapUrl}" target="_blank" rel="noopener" class="pharmacy-map-link">🗺️ 크게 보기</a>` : ''}</div>` : ''}
+          ${tel !== '-' ? `<p class="pharmacy-tel">📞 <a href="tel:${tel.replace(/\D/g,'')}">${tel}</a></p>` : ''}
         </div>
       `;
     }).join('');
