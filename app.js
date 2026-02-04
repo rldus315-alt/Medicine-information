@@ -107,11 +107,32 @@ function getExpandedSearchTerms(query) {
   return [q];
 }
 
-// 한국 의약품 로컬 검색 (품목명, 영문명, 업체명, 주성분, 분류명) - 확장 검색어 적용
+// 검색어와 품목명 매칭 점수 (높을수록 정확한 일치)
+function getRelevanceScore(d, query) {
+  const q = (query || '').trim().toLowerCase();
+  const name = (d.name || '').trim().toLowerCase();
+  const nameEn = (d.nameEn || '').toLowerCase();
+  const ingredient = (d.ingredient || '').toLowerCase();
+  const company = (d.company || '').toLowerCase();
+  const category = (d.category || '').toLowerCase();
+  if (!q || !name) return 0;
+  // 품목명 정확 일치 > 품목명 시작 일치 > 품목명 포함 > 영문명/성분/업체/분류
+  if (name === q) return 100;
+  if (name.startsWith(q)) return 80;
+  if (name.includes(q)) return 60;
+  if (nameEn === q) return 50;
+  if (nameEn.startsWith(q) || nameEn.includes(q)) return 40;
+  if (ingredient.includes(q)) return 30;
+  if (company.includes(q) || category.includes(q)) return 20;
+  return 10;
+}
+
+// 한국 의약품 로컬 검색 (품목명, 영문명, 업체명, 주성분, 분류명) - 확장 검색어 적용, 정확한 일치 상단
 function searchKoreanDrugs(query) {
   if (!KOREAN_DRUG_DATABASE) return [];
   const terms = getExpandedSearchTerms(query);
   const seen = new Map();
+  const qOriginal = (query || '').trim();
   for (const t of terms) {
     if (!t || t.length < 1) continue;
     const ql = (t + '').toLowerCase();
@@ -129,7 +150,9 @@ function searchKoreanDrugs(query) {
       }
     });
   }
-  return Array.from(seen.values()).slice(0, 30);
+  const list = Array.from(seen.values());
+  list.sort((a, b) => getRelevanceScore(b, qOriginal) - getRelevanceScore(a, qOriginal));
+  return list.slice(0, 30);
 }
 
 // Search - e약은요 API(키 있을 때) → 로컬 DB → OpenFDA 순으로 검색
@@ -144,7 +167,15 @@ async function searchDrugs(query) {
     try {
       const eyakItems = await fetchEyakApi(q);
       if (eyakItems && eyakItems.length > 0) {
-        renderSearchResults(eyakItems.map(d => ({ source: 'eyak', data: d })));
+        const scored = eyakItems.map(d => ({
+          source: 'eyak',
+          data: d,
+          score: (d.itemName || '').toLowerCase() === q.toLowerCase() ? 100 :
+            (d.itemName || '').toLowerCase().startsWith(q.toLowerCase()) ? 80 :
+            (d.itemName || '').toLowerCase().includes(q.toLowerCase()) ? 60 : 40
+        }));
+        scored.sort((a, b) => b.score - a.score);
+        renderSearchResults(scored.map(x => ({ source: x.source, data: x.data })));
         return;
       }
     } catch (_) { /* fallback */ }
