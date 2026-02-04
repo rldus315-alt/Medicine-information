@@ -564,8 +564,10 @@ function initAutocomplete() {
     }
     searchSuggestions.classList.add('visible');
     searchSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
         const term = el.dataset.name;
+        if (!term) return;
         searchInput.value = term;
         searchSuggestions.classList.remove('visible');
         searchSuggestions.innerHTML = '';
