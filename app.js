@@ -215,22 +215,22 @@ function printMedicationGuide() {
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans KR', sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #1e293b; }
+        body { font-family: 'Noto Sans KR', sans-serif; padding: 24px; max-width: 600px; margin: 0 auto; color: #1e3a2f; }
         .med-guide-print { }
-        .med-guide-title { font-size: 18px; font-weight: 700; color: #2563eb; margin-bottom: 8px; }
-        .med-guide-meta { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+        .med-guide-title { font-size: 18px; font-weight: 700; color: #059669; margin-bottom: 8px; }
+        .med-guide-meta { font-size: 12px; color: #4a6b5d; margin-bottom: 16px; }
         .med-guide-drug-name { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
         .med-guide-info p { font-size: 14px; line-height: 1.6; margin-bottom: 6px; }
         .med-guide-block { margin-top: 16px; }
-        .med-guide-block h4 { font-size: 14px; color: #2563eb; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+        .med-guide-block h4 { font-size: 14px; color: #059669; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #bbd4c8; }
         .med-guide-pictograms { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .pictogram-item { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; background: #f8fafc; }
-        .pictogram-svg { width: 20px; height: 20px; flex-shrink: 0; color: #2563eb; }
-        .pictogram-svg.pictogram-warning { color: #f59e0b; }
-        .pictogram-label { color: #64748b; }
+        .pictogram-item { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid #bbd4c8; border-radius: 6px; font-size: 11px; background: #f0fdf4; }
+        .pictogram-svg { width: 20px; height: 20px; flex-shrink: 0; color: #059669; }
+        .pictogram-svg.pictogram-warning { color: #d97706; }
+        .pictogram-label { color: #4a6b5d; }
         .med-guide-block p { font-size: 13px; line-height: 1.7; }
-        hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
-        .med-guide-footer { font-size: 11px; color: #64748b; margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+        hr { border: none; border-top: 1px solid #bbd4c8; margin: 16px 0; }
+        .med-guide-footer { font-size: 11px; color: #4a6b5d; margin-top: 24px; padding-top: 12px; border-top: 1px solid #bbd4c8; }
       </style>
     </head>
     <body>${body.innerHTML}</body>
@@ -923,6 +923,78 @@ addDrugBtn.addEventListener('click', () => {
     interactionDrugInput.value = '';
   }
 });
+
+// 상호작용 검사 - 의약품 입력 자동완성
+function initInteractionAutocomplete() {
+  const interactionSuggestions = document.getElementById('interactionSuggestions');
+  if (!interactionSuggestions || !interactionDrugInput) return;
+  let interactionSuggestTimeout = null;
+  interactionSuggestions.classList.remove('visible');
+  interactionSuggestions.innerHTML = '';
+
+  function showInteractionSuggestions(items) {
+    if (!items.length) {
+      interactionSuggestions.classList.remove('visible');
+      interactionSuggestions.innerHTML = '';
+      return;
+    }
+    interactionSuggestions.innerHTML = items.map(d => `
+      <div class="suggestion-item" data-name="${(d.name || '').replace(/"/g, '&quot;')}">${d.name || '-'}</div>
+    `).join('');
+    interactionSuggestions.classList.add('visible');
+    interactionSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const term = el.dataset.name;
+        if (!term) return;
+        interactionSuggestions.classList.remove('visible');
+        interactionSuggestions.innerHTML = '';
+        if (!interactionDrugs.includes(term)) {
+          interactionDrugs.push(term);
+          renderInteractionList();
+        }
+        interactionDrugInput.value = '';
+      });
+    });
+  }
+
+  interactionDrugInput.addEventListener('input', () => {
+    clearTimeout(interactionSuggestTimeout);
+    const q = interactionDrugInput.value.trim();
+    if (!q) {
+      interactionSuggestions.classList.remove('visible');
+      interactionSuggestions.innerHTML = '';
+      return;
+    }
+    interactionSuggestTimeout = setTimeout(() => showInteractionSuggestions(getDrugSuggestions(q)), 120);
+  });
+  interactionDrugInput.addEventListener('focus', () => {
+    const q = interactionDrugInput.value.trim();
+    if (q) showInteractionSuggestions(getDrugSuggestions(q));
+    else {
+      interactionSuggestions.classList.remove('visible');
+      interactionSuggestions.innerHTML = '';
+    }
+  });
+  interactionDrugInput.addEventListener('blur', () => {
+    setTimeout(() => interactionSuggestions.classList.remove('visible'), 200);
+  });
+  interactionDrugInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const name = interactionDrugInput.value.trim();
+      if (name && !interactionDrugs.includes(name)) {
+        interactionDrugs.push(name);
+        renderInteractionList();
+        interactionDrugInput.value = '';
+        interactionSuggestions.classList.remove('visible');
+      }
+    } else if (e.key === 'Escape') {
+      interactionSuggestions.classList.remove('visible');
+      interactionDrugInput.blur();
+    }
+  });
+}
+initInteractionAutocomplete();
 
 function renderInteractionList() {
   interactionDrugList.innerHTML = interactionDrugs.map((d, i) => `
