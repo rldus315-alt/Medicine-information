@@ -1540,7 +1540,7 @@ async function fetchPharmacyList(params) {
   const pharmacyKey = (typeof DATA_GO_KR_PHARMACY_API_KEY !== 'undefined' && DATA_GO_KR_PHARMACY_API_KEY) ? DATA_GO_KR_PHARMACY_API_KEY.trim() : '';
   const commonKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
   const apiKey = pharmacyKey || commonKey;
-  if (!apiKey) return { items: [], total: 0, error: '공공데이터 API 키가 필요합니다. config.js에 DATA_GO_KR_PHARMACY_API_KEY 또는 DATA_GO_KR_API_KEY를 설정하세요.' };
+  if (!apiKey) return { items: [], total: 0, error: 'API_KEY_REQUIRED' };
   const q = new URLSearchParams({
     serviceKey: apiKey,
     pageNo: String(params.pageNo || 1),
@@ -1594,6 +1594,19 @@ function initPharmacy() {
   const searchBtn = document.getElementById('searchPharmacyBtn');
   const resultsEl = document.getElementById('pharmacyResults');
   if (!sidoSelect || !sigugunSelect || !searchBtn || !resultsEl) return;
+
+  const pharmacyKey = (typeof DATA_GO_KR_PHARMACY_API_KEY !== 'undefined' && DATA_GO_KR_PHARMACY_API_KEY) ? DATA_GO_KR_PHARMACY_API_KEY.trim() : '';
+  const commonKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
+  const hasApiKey = !!(pharmacyKey || commonKey);
+  const apiNotice = document.getElementById('pharmacyApiNotice');
+  const apiRadio = document.querySelector('input[name="pharmacyMode"][value="api"]');
+  const nightRadio = document.querySelector('input[name="pharmacyMode"][value="night"]');
+  if (!hasApiKey && apiNotice) {
+    apiNotice.classList.remove('hidden');
+    if (nightRadio) nightRadio.checked = true;
+  } else if (apiNotice) {
+    apiNotice.classList.add('hidden');
+  }
 
   if (typeof SIDO_SIGUGUN !== 'undefined') {
     Object.keys(SIDO_SIGUGUN).forEach(sido => {
@@ -1683,7 +1696,17 @@ function initPharmacy() {
     resultsEl.innerHTML = '<div class="loading">약국 정보를 검색 중...</div>';
     const { items, total, error } = await fetchPharmacyList({ Q0, Q1, QN, numOfRows: 30 });
     if (error) {
-      resultsEl.innerHTML = `<p class="error">${error}</p>`;
+      if (error === 'API_KEY_REQUIRED') {
+        resultsEl.innerHTML = `
+          <div class="pharmacy-api-error">
+            <p class="error">일반 약국 검색에는 공공데이터 API 키가 필요합니다.</p>
+            <p class="pharmacy-api-hint">🌙 <strong>심야운영약국(680곳)</strong>은 API 없이 바로 사용할 수 있습니다. 위에서 "심야운영약국"을 선택한 뒤 검색해 보세요.</p>
+            <p class="pharmacy-api-setup">로컬에서 API 사용: <code>config.js.example</code>를 <code>config.js</code>로 복사 후 <a href="https://www.data.go.kr" target="_blank" rel="noopener">공공데이터포털</a>에서 인증키 발급받아 입력하세요.</p>
+          </div>
+        `;
+      } else {
+        resultsEl.innerHTML = `<p class="error">${error}</p>`;
+      }
       return;
     }
     if (!items || items.length === 0) {
