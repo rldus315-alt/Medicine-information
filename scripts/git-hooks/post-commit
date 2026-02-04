@@ -1,0 +1,3 @@
+#!/bin/sh
+# Commit 후 자동 push
+git push

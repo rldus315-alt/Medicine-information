@@ -1604,14 +1604,6 @@ function initPharmacy() {
     });
   }
 
-  const today = new Date().getDay();
-  const pharmacyDay = document.getElementById('pharmacyDay');
-  if (pharmacyDay) {
-    const val = today === 0 ? '7' : String(today);
-    const opt = pharmacyDay.querySelector(`option[value="${val}"]`);
-    if (opt) opt.selected = true;
-  }
-
   sidoSelect.addEventListener('change', () => {
     sigugunSelect.innerHTML = '<option value="">선택</option>';
     const sigugunList = SIDO_SIGUGUN ? SIDO_SIGUGUN[sidoSelect.value] : [];
@@ -1657,7 +1649,6 @@ function initPharmacy() {
     const Q0 = sidoSelect.value.trim();
     const Q1 = sigugunSelect.value.trim();
     const QN = document.getElementById('pharmacyName')?.value.trim() || '';
-    const QT = pharmacyDay?.value || '1';
     const mode = document.querySelector('input[name="pharmacyMode"]:checked')?.value || 'api';
 
     if (!Q0) {
@@ -1690,7 +1681,7 @@ function initPharmacy() {
     }
 
     resultsEl.innerHTML = '<div class="loading">약국 정보를 검색 중...</div>';
-    const { items, total, error } = await fetchPharmacyList({ Q0, Q1, QN, QT, numOfRows: 30 });
+    const { items, total, error } = await fetchPharmacyList({ Q0, Q1, QN, numOfRows: 30 });
     if (error) {
       resultsEl.innerHTML = `<p class="error">${error}</p>`;
       return;
