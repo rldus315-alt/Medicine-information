@@ -106,9 +106,10 @@ function searchByBodyPart(partId) {
       showDetail(item.source, item.data);
     });
   });
-  document.querySelectorAll('.body-part-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.body-part-btn, .body-part').forEach(b => b.classList.remove('active'));
   const btn = document.querySelector(`.body-part-btn[data-part="${partId}"]`);
   if (btn) btn.classList.add('active');
+  document.querySelectorAll(`.body-part[data-part="${partId}"]`).forEach(el => el.classList.add('active'));
 }
 
 // Navigation
@@ -256,7 +257,7 @@ function prependPriorityPillMatches(results, query) {
 // Search - e약은요 API(키 있을 때) → 로컬 DB → OpenFDA 순으로 검색
 async function searchDrugs(query) {
   if (!query.trim()) return;
-  document.querySelectorAll('.body-part-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.body-part-btn, .body-part').forEach(b => b.classList.remove('active'));
   searchResults.innerHTML = '<div class="loading">검색 중...</div>';
   const q = query.trim();
 

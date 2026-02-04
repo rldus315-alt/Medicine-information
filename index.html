@@ -43,20 +43,23 @@
         <div class="body-part-section">
           <p class="body-part-title">부위별로 찾기 · 아픈 곳을 클릭하세요</p>
           <div class="body-figure">
-            <svg viewBox="0 0 140 200" class="body-svg">
-              <defs><linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#e0f2fe"/><stop offset="100%" style="stop-color:#bae6fd"/></linearGradient></defs>
-              <ellipse cx="70" cy="35" rx="22" ry="25" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="head"/>
-              <ellipse cx="70" cy="75" rx="20" ry="12" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="eye"/>
-              <ellipse cx="70" cy="95" rx="8" ry="8" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="nose"/>
-              <rect x="55" y="102" width="30" height="20" rx="4" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="throat"/>
-              <ellipse cx="70" cy="140" rx="30" ry="25" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="chest"/>
-              <ellipse cx="70" cy="175" rx="22" ry="18" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="stomach"/>
-              <ellipse cx="25" cy="115" rx="15" ry="40" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="arm"/>
-              <ellipse cx="115" cy="115" rx="15" ry="40" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="arm"/>
-              <ellipse cx="45" cy="195" rx="12" ry="35" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="leg"/>
-              <ellipse cx="95" cy="195" rx="12" ry="35" fill="url(#bodyGrad)" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="leg"/>
-              <circle cx="70" cy="155" r="14" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5" class="body-part" data-part="joint"/>
-              <ellipse cx="70" cy="168" rx="16" ry="12" fill="#7dd3fc" stroke="#0ea5e9" stroke-width="1.5" class="body-part" data-part="organ"/>
+            <svg viewBox="0 0 140 220" class="body-svg body-svg-outline">
+              <defs>
+                <style>.body-outline{fill:none!important;stroke:#64748b;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s,stroke-width .2s}.body-outline:hover,.body-outline.active{stroke:#2563eb;stroke-width:1.5}</style>
+              </defs>
+              <ellipse cx="70" cy="35" rx="22" ry="25" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="head"/>
+              <ellipse cx="60" cy="38" rx="5" ry="4" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="eye"/>
+              <ellipse cx="80" cy="38" rx="5" ry="4" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="eye"/>
+              <path d="M70 45 L70 55" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="nose"/>
+              <rect x="55" y="58" width="30" height="18" rx="2" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="throat"/>
+              <ellipse cx="70" cy="105" rx="28" ry="22" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="chest"/>
+              <ellipse cx="70" cy="142" rx="22" ry="18" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="stomach"/>
+              <ellipse cx="70" cy="155" rx="14" ry="10" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="organ"/>
+              <circle cx="70" cy="148" r="8" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="joint"/>
+              <ellipse cx="28" cy="115" rx="12" ry="35" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="arm"/>
+              <ellipse cx="112" cy="115" rx="12" ry="35" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="arm"/>
+              <ellipse cx="48" cy="195" rx="10" ry="32" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="leg"/>
+              <ellipse cx="92" cy="195" rx="10" ry="32" fill="none" stroke="#64748b" stroke-width="1.2" class="body-outline body-part" data-part="leg"/>
             </svg>
           </div>
           <div class="body-part-labels">
