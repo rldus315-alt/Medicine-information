@@ -185,6 +185,11 @@ body {
 .med-guide-print .med-guide-info p { font-size: 0.9rem; line-height: 1.5; margin-bottom: 0.25rem; }
 .med-guide-print .med-guide-block { margin-top: 1rem; }
 .med-guide-print .med-guide-block h4 { font-size: 0.9rem; color: var(--primary); margin-bottom: 0.35rem; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
+.med-guide-print .med-guide-pictograms { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.med-guide-print .pictogram-item { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; background: var(--bg); }
+.med-guide-print .pictogram-svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--primary); }
+.med-guide-print .pictogram-svg.pictogram-warning { color: var(--warning); }
+.med-guide-print .pictogram-label { color: var(--text-muted); }
 .med-guide-print .med-guide-block p { font-size: 0.9rem; line-height: 1.6; }
 .med-guide-print hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 .med-guide-print .med-guide-footer { font-size: 0.75rem; color: var(--text-muted); margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }

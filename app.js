@@ -67,6 +67,37 @@ function addSpacing(text) {
     .trim();
 }
 
+// 복약 안내문 픽토그램 (키워드 → 아이콘)
+const MED_PICTOGRAMS = [
+  { id: 'alcohol', keywords: /음주|알코올|술|세\s*잔\s*이상|음주\s*금지/i, label: '음주 금지', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10h8l-2 10h-4L12 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="22" x2="24" y2="22" stroke="currentColor" stroke-width="1.5"/><line x1="6" y1="8" x2="26" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' },
+  { id: 'pregnancy', keywords: /임신|수유|임부|젖먹이|수유부|임신부/i, label: '임신·수유 주의', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 20q4 4 8 0" fill="none" stroke="currentColor" stroke-width="1.5"/><ellipse cx="16" cy="24" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { id: 'child', keywords: /어린이|영아|소아|유아|아동|손이\s*닿지|손\s*닿지/i, label: '어린이 손 닿지 않는 곳', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="11" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M12 18v4h8v-4" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="26" x2="22" y2="26" stroke="currentColor" stroke-width="1.5"/><path d="M8 10l3-3M24 10l-3-3" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'light', keywords: /직사광선|빛\s*피해|빛을\s*피해|광선|햇빛/i, label: '빛 피하기', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="14" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="16" y1="6" x2="16" y2="8" stroke="currentColor" stroke-width="1.5"/><line x1="16" y1="22" x2="16" y2="26" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="16" x2="10" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="22" y1="16" x2="26" y2="16" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="10" x2="12" y2="12" stroke="currentColor" stroke-width="1"/><line x1="22" y1="10" x2="20" y2="12" stroke="currentColor" stroke-width="1"/><line x1="10" y1="22" x2="12" y2="20" stroke="currentColor" stroke-width="1"/><line x1="22" y1="22" x2="20" y2="20" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'moisture', keywords: /습기|습기와|습한|젖은/i, label: '습기 피하기', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8c-4 4-8 8-8 12 0 4.4 3.6 8 8 8s8-3.6 8-8c0-4-4-8-8-12z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { id: 'cold', keywords: /냉장|냉동|저온|2~8|2\s*~\s*8/i, label: '냉장 보관', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><rect x="10" y="8" width="12" height="16" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="10" y1="14" x2="22" y2="14" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="10" x2="14" y2="22" stroke="currentColor" stroke-width="1"/><line x1="18" y1="10" x2="18" y2="22" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'food', keywords: /식후|식사\s*후|식사와|밥\s*먹고|음식과/i, label: '식후 복용', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><ellipse cx="16" cy="18" rx="6" ry="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 18v-6c0-1 1-2 2-2h8c1 0 2 1 2 2v6" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="12" x2="12" y2="14" stroke="currentColor" stroke-width="1"/><line x1="16" y1="12" x2="16" y2="14" stroke="currentColor" stroke-width="1"/><line x1="20" y1="12" x2="20" y2="14" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'empty', keywords: /공복|식전|식사\s*전|빈\s*속/i, label: '공복 복용', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2 2"/></svg>' },
+  { id: 'bedtime', keywords: /취침|잠들기\s*전|취침\s*전|밤에|자기\s*전/i, label: '취침 전 복용', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 20c0-3.3 2.7-6 6-6s6 2.7 6 6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 12l2-2 2 2" fill="none" stroke="currentColor" stroke-width="1"/><path d="M22 10l2-2 2 2" fill="none" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'drive', keywords: /운전|기계\s*조작|차량\s*운전|졸음/i, label: '운전·기계조작 주의', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18l2-4h12l2 4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="20" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="21" cy="20" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="14" x2="24" y2="14" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'consult', keywords: /의사|약사|상의|상담|문의|진료/i, label: '의사·약사 상담', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="11" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 24c0-3.3 2.7-6 6-6s6 2.7 6 6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M14 14l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { id: 'dosage', keywords: /용법|용량|복용\s*방법|정해진|잘\s*지키/i, label: '용법·용량 준수', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="14" r="4" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M16 10v2M16 18v2M14 16h-2M18 16h2" stroke="currentColor" stroke-width="1.5"/><path d="M14 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>' },
+  { id: 'interaction', keywords: /상호작용|다른\s*약|함께\s*복용|중복\s*복용|다른\s*의약품/i, label: '약물 상호작용', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="14" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="21" cy="14" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="13.5" y1="14" x2="18.5" y2="14" stroke="currentColor" stroke-width="1.5"/><path d="M11 18l2 2M21 18l-2 2" fill="none" stroke="currentColor" stroke-width="1"/></svg>' },
+  { id: 'warning', keywords: /금지|주의|경고|위험|즉시|중지|중단/i, label: '주의', svg: '<svg viewBox="0 0 32 32" class="pictogram-svg pictogram-warning"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8v10M16 21v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>' },
+];
+
+function getPictogramsForText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const raw = String(text).replace(/\s+/g, ' ');
+  return MED_PICTOGRAMS.filter(p => p.keywords.test(raw)).map(p => ({ id: p.id, label: p.label, svg: p.svg }));
+}
+
+function renderPictograms(pictograms) {
+  if (!pictograms || pictograms.length === 0) return '';
+  return `<div class="med-guide-pictograms">${pictograms.map(p => `
+    <span class="pictogram-item" title="${p.label}">${p.svg}<span class="pictogram-label">${p.label}</span></span>
+  `).join('')}</div>`;
+}
+
 // 복약 안내문 생성 (열람·인쇄용)
 function generateMedicationGuide(source, drug) {
   const fmt = (t) => (t && t.trim()) ? addSpacing(String(t).trim()).replace(/\n/g, '<br>') : '-';
@@ -125,12 +156,19 @@ function generateMedicationGuide(source, drug) {
   }
 
   const dateStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
-  const sectionHtml = sections.map(s => `
+  const pictogramTitles = /주의사항|경고|사용법|보관법|상호작용|부작용|금기|임신|수유|용법|용량/i;
+  const sectionHtml = sections.map(s => {
+    const showPictograms = pictogramTitles.test(s.title) && s.data;
+    const pictos = showPictograms ? getPictogramsForText(s.data) : [];
+    const pictoHtml = renderPictograms(pictos);
+    return `
     <div class="med-guide-block">
       <h4>${s.title}</h4>
+      ${pictoHtml}
       <p>${fmt(s.data)}</p>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <div class="med-guide-print">
@@ -185,6 +223,11 @@ function printMedicationGuide() {
         .med-guide-info p { font-size: 14px; line-height: 1.6; margin-bottom: 6px; }
         .med-guide-block { margin-top: 16px; }
         .med-guide-block h4 { font-size: 14px; color: #2563eb; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; }
+        .med-guide-pictograms { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .pictogram-item { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 11px; background: #f8fafc; }
+        .pictogram-svg { width: 20px; height: 20px; flex-shrink: 0; color: #2563eb; }
+        .pictogram-svg.pictogram-warning { color: #f59e0b; }
+        .pictogram-label { color: #64748b; }
         .med-guide-block p { font-size: 13px; line-height: 1.7; }
         hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
         .med-guide-footer { font-size: 11px; color: #64748b; margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
