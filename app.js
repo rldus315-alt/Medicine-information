@@ -204,7 +204,7 @@ function generateMedicationGuide(source, drug) {
       <hr>
       ${sectionHtml}
       <div class="med-guide-footer">
-        <p>※ 본 안내문은 참고용이며, 의료 상담을 대체하지 않습니다. 복용 방법·용량은 처방에 따르고, 궁금한 점은 의사 또는 약사에게 문의하세요.</p>
+        <p>투닥(to-DOC) · ※ 본 안내문은 참고용이며, 의료 상담을 대체하지 않습니다. 복용 방법·용량은 처방에 따르고, 궁금한 점은 의사 또는 약사에게 문의하세요.</p>
       </div>
     </div>
   `;
@@ -233,7 +233,7 @@ function printMedicationGuide() {
     <html lang="ko">
     <head>
       <meta charset="UTF-8">
-      <title>복약 안내문 - 인쇄</title>
+      <title>투닥(to-DOC) - 복약 안내문 인쇄</title>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1638,6 +1638,13 @@ function initPharmacy() {
     return parts.length ? parts.join(' | ') : '영업시간 정보 없음';
   }
 
+  function matchPharmacyName(name, query) {
+    if (!query || !name) return !query;
+    const words = query.trim().split(/\s+/).filter(Boolean).map(w => w.toLowerCase());
+    const n = (name || '').toLowerCase();
+    return words.every(w => n.indexOf(w) >= 0);
+  }
+
   function filterNightPharmacies(Q0, Q1, QN) {
     if (typeof NIGHT_PHARMACY === 'undefined' || !Array.isArray(NIGHT_PHARMACY)) return [];
     let list = NIGHT_PHARMACY;
@@ -1648,8 +1655,7 @@ function initPharmacy() {
       list = list.filter(p => (p.addr || '').indexOf(Q1) >= 0 || (p.addr2 || '').indexOf(Q1) >= 0);
     }
     if (QN) {
-      const q = QN.toLowerCase();
-      list = list.filter(p => (p.name || '').toLowerCase().indexOf(q) >= 0);
+      list = list.filter(p => matchPharmacyName(p.name, QN));
     }
     return list;
   }
@@ -1664,10 +1670,99 @@ function initPharmacy() {
       list = list.filter(p => (p.dutyAddr || '').indexOf(Q1) >= 0);
     }
     if (QN) {
-      const q = QN.toLowerCase();
-      list = list.filter(p => (p.dutyName || '').toLowerCase().indexOf(q) >= 0);
+      list = list.filter(p => matchPharmacyName(p.dutyName, QN));
     }
     return list;
+  }
+
+  function getPharmacyNameSuggestions(q, Q0, Q1, mode) {
+    const qTrim = (q || '').trim().toLowerCase();
+    if (!qTrim || qTrim.length < 1) return [];
+    const words = qTrim.split(/\s+/).filter(Boolean);
+    function matches(name) {
+      const n = (name || '').toLowerCase();
+      return words.every(w => n.indexOf(w) >= 0);
+    }
+    let list = [];
+    if (mode === 'night' && typeof NIGHT_PHARMACY !== 'undefined' && Array.isArray(NIGHT_PHARMACY)) {
+      list = NIGHT_PHARMACY;
+      if (Q0) list = list.filter(p => (p.addr || '').indexOf(Q0) >= 0 || (p.addr2 || '').indexOf(Q0) >= 0);
+      if (Q1) list = list.filter(p => (p.addr || '').indexOf(Q1) >= 0 || (p.addr2 || '').indexOf(Q1) >= 0);
+      list = list.filter(p => matches(p.name));
+      return [...new Set(list.map(p => p.name))].slice(0, 12);
+    }
+    if (hasEmbeddedData) {
+      list = PHARMACY_DATA;
+      if (Q0) list = list.filter(p => (p.dutyAddr || '').indexOf(Q0) >= 0);
+      if (Q1) list = list.filter(p => (p.dutyAddr || '').indexOf(Q1) >= 0);
+      list = list.filter(p => matches(p.dutyName));
+      return [...new Set(list.map(p => p.dutyName))].slice(0, 12);
+    }
+    return [];
+  }
+
+  const pharmacyNameInput = document.getElementById('pharmacyName');
+  const pharmacyNameSuggestions = document.getElementById('pharmacyNameSuggestions');
+  let pharmacySuggestTimeout = null;
+
+  function showPharmacySuggestions(items) {
+    if (!pharmacyNameSuggestions) return;
+    if (!items || items.length === 0) {
+      pharmacyNameSuggestions.classList.remove('visible');
+      pharmacyNameSuggestions.innerHTML = '';
+      return;
+    }
+    pharmacyNameSuggestions.innerHTML = items.map(name => `
+      <div class="suggestion-item" data-name="${(name || '').replace(/"/g, '&quot;')}">${(name || '-').replace(/</g, '&lt;')}</div>
+    `).join('');
+    pharmacyNameSuggestions.classList.add('visible');
+    pharmacyNameSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const name = el.dataset.name;
+        if (name && pharmacyNameInput) {
+          pharmacyNameInput.value = name;
+          pharmacyNameSuggestions.classList.remove('visible');
+          pharmacyNameSuggestions.innerHTML = '';
+        }
+      });
+    });
+  }
+
+  if (pharmacyNameInput && pharmacyNameSuggestions) {
+    pharmacyNameInput.addEventListener('input', () => {
+      clearTimeout(pharmacySuggestTimeout);
+      const q = pharmacyNameInput.value.trim();
+      const Q0 = sidoSelect.value.trim();
+      const Q1 = sigugunSelect.value.trim();
+      const mode = document.querySelector('input[name="pharmacyMode"]:checked')?.value || 'api';
+      if (!q || q.length < 1) {
+        pharmacyNameSuggestions.classList.remove('visible');
+        pharmacyNameSuggestions.innerHTML = '';
+        return;
+      }
+      pharmacySuggestTimeout = setTimeout(() => {
+        const items = getPharmacyNameSuggestions(q, Q0, Q1, mode);
+        showPharmacySuggestions(items);
+      }, 150);
+    });
+    pharmacyNameInput.addEventListener('focus', () => {
+      const q = pharmacyNameInput.value.trim();
+      if (q && q.length >= 1) {
+        const Q0 = sidoSelect.value.trim();
+        const Q1 = sigugunSelect.value.trim();
+        const mode = document.querySelector('input[name="pharmacyMode"]:checked')?.value || 'api';
+        showPharmacySuggestions(getPharmacyNameSuggestions(q, Q0, Q1, mode));
+      } else {
+        pharmacyNameSuggestions.classList.remove('visible');
+      }
+    });
+    pharmacyNameInput.addEventListener('blur', () => {
+      setTimeout(() => pharmacyNameSuggestions.classList.remove('visible'), 200);
+    });
+    pharmacyNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') pharmacyNameSuggestions.classList.remove('visible');
+    });
   }
 
   searchBtn.addEventListener('click', async () => {

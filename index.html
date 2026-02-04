@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>의약품 정보 | Medicine Info</title>
+  <title>투닥(to-DOC) | 의약품 정보</title>
   <script>
     (function() {
       var p = location.pathname;
@@ -201,9 +201,10 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group pharmacy-name-wrapper" style="position:relative;">
             <label>약국명 검색</label>
-            <input type="text" id="pharmacyName" placeholder="예: 삼성약국 (선택)">
+            <input type="text" id="pharmacyName" placeholder="예: 삼성, 건강 (부분 일치·여러 단어 가능)" autocomplete="off">
+            <div class="pharmacy-name-suggestions" id="pharmacyNameSuggestions"></div>
           </div>
           <button class="btn btn-primary" id="searchPharmacyBtn">약국 검색</button>
         </div>
@@ -226,7 +227,7 @@
     </main>
 
     <footer class="footer">
-      <p>⚠️ 본 정보는 참고용이며, 의료 상담을 대체하지 않습니다. 전문가와 상담하세요.</p>
+      <p>투닥(to-DOC) · ⚠️ 본 정보는 참고용이며, 의료 상담을 대체하지 않습니다. 전문가와 상담하세요.</p>
     </footer>
   </div>
 

@@ -130,6 +130,22 @@ body {
   display: none;
 }
 .search-suggestions.visible { display: block; }
+.pharmacy-name-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+}
+.pharmacy-name-suggestions.visible { display: block; }
 .search-hint { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; }
 .suggestion-item {
   padding: 0.875rem 1rem;
@@ -586,6 +602,15 @@ body {
   margin-bottom: 1rem;
 }
 .pharmacy-form .form-row { margin-bottom: 1rem; }
+.pharmacy-form .form-group input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 1rem;
+  background: var(--card);
+}
 .pharmacy-form .btn { margin-top: 0.5rem; }
 .pharmacy-results {
   display: flex;
