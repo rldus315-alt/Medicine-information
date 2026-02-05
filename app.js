@@ -1,3 +1,10 @@
+// 사이트 진입 시 기존 저장 데이터 초기화 (새로 선택 가능하도록)
+(function clearStoredData() {
+  ['medicine_user_profile', 'medicine_recent_searches', 'myMedications'].forEach(k => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
+})();
+
 // 한글 띄어쓰기 보정 (의약품 정보용)
 function addSpacing(text) {
   if (!text || typeof text !== 'string') return text;
