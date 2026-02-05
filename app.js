@@ -371,8 +371,15 @@ function checkContraindications(drugName, drug) {
   if (!drugName || typeof CONTRAINDICATION_RULES === 'undefined') return warnings;
   const drugNames = getInteractionRelevantNames ? getInteractionRelevantNames(drugName) : [drugName];
   const drugNamesLower = drugNames.map(n => (n || '').toLowerCase());
+  const drugIngredient = (drug && (drug.ingredient || drug.itemSeq && drug.efcyQesitm) ? (drug.ingredient || '').split(/[,|/]/).map(s => s.trim()) : []).filter(Boolean);
+  const allNames = [...drugNamesLower, ...drugIngredient.map(i => i.toLowerCase())];
 
-  const hasDrug = (drugKey) => drugNamesLower.some(dn => dn.includes((drugKey || '').toLowerCase()) || (drugKey || '').toLowerCase().includes(dn));
+  const hasDrug = (drugKey) => allNames.some(dn => {
+    const dk = (drugKey || '').toLowerCase().trim();
+    return dk && (dn.includes(dk) || dk.includes(dn) || dn === dk);
+  });
+
+  const isLikelyIngredient = (s) => s && typeof s === 'string' && s.length < 45 && !/^\d/.test(s) && !/임신.*미확립|동물실험|투여.*시/.test(s);
 
   userProfile.conditions.forEach(cond => {
     const rule = CONTRAINDICATION_RULES[cond];
@@ -382,7 +389,14 @@ function checkContraindications(drugName, drug) {
 
   if (userProfile.pregnancy) {
     const rule = CONTRAINDICATION_RULES[userProfile.pregnancy];
-    if (rule && rule.drugs.some(d => hasDrug(d))) warnings.push({ type: userProfile.pregnancy, message: rule.message });
+    let match = rule && rule.drugs.some(d => hasDrug(d));
+    if (!match && typeof DUR_PREGNANCY !== 'undefined' && userProfile.pregnancy === '임신') {
+      match = DUR_PREGNANCY.some(ing => isLikelyIngredient(ing) && hasDrug(ing));
+    }
+    if (!match && typeof DUR_BREASTFEEDING !== 'undefined' && userProfile.pregnancy === '수유') {
+      match = DUR_BREASTFEEDING.some(ing => isLikelyIngredient(ing) && hasDrug(ing));
+    }
+    if (match) warnings.push({ type: userProfile.pregnancy, message: rule ? rule.message : (userProfile.pregnancy === '임신' ? '임신 중: 해당 약물은 태아에 영향 가능. 반드시 산부인과·의사 상담.' : '수유 중: 일부 약물이 모유로 배출될 수 있음. 의사 상담 권장.') });
   }
 
   if (userProfile.allergy) {
@@ -408,6 +422,18 @@ function renderContraindicationWarnings(warnings) {
     <strong>⚠️ 개인 맞춤 경고</strong>
     ${warnings.map(w => `<p class="contraindication-msg">${w.message}</p>`).join('')}
   </div>`;
+}
+
+function getDurWarnings(drugName, drug) {
+  const warnings = [];
+  const names = getInteractionRelevantNames ? getInteractionRelevantNames(drugName) : [drugName];
+  const allNames = names.map(n => (n || '').toLowerCase().trim());
+  const validIng = (s) => s && typeof s === 'string' && s.length > 2 && s.length < 50 && !/^[\d,]+$|^0+/.test(s.trim());
+  const hasIngredient = (list) => list && list.some(ing => validIng(ing) && allNames.some(n => n.includes((ing || '').toLowerCase()) || (ing || '').toLowerCase().includes(n)));
+  if (typeof DUR_DOSAGE !== 'undefined' && hasIngredient(DUR_DOSAGE)) warnings.push({ type: '용량주의', msg: '1일 최대 용량을 준수하세요. 첨부문서 확인.' });
+  if (typeof DUR_AGE !== 'undefined' && hasIngredient(DUR_AGE)) warnings.push({ type: '연령금기', msg: '연령에 따른 사용 제한이 있을 수 있습니다.' });
+  if (typeof DUR_ELDERLY !== 'undefined' && hasIngredient(DUR_ELDERLY)) warnings.push({ type: '노인주의', msg: '노인에서 용량·부작용에 주의가 필요합니다.' });
+  return warnings;
 }
 
 // Navigation
@@ -696,6 +722,8 @@ function showDetail(source, drug) {
   const drugName = source === 'eyak' ? (drug.itemName || '') : source === 'korean' ? (drug.name || '') : (drug.openfda?.brand_name?.[0] || drug.openfda?.generic_name?.[0] || '');
   const contraindicationWarnings = checkContraindications(drugName, drug);
   const contraindicationHtml = renderContraindicationWarnings(contraindicationWarnings);
+  const durWarnings = getDurWarnings(drugName, drug);
+  const durHtml = durWarnings.length > 0 ? `<div class="contraindication-alert dur-alert"><strong>📋 DUR 안전정보</strong>${durWarnings.map(w => `<p class="contraindication-msg">${w.type}: ${w.msg}</p>`).join('')}</div>` : '';
   const addToMedBtn = drugName ? `<button class="btn btn-primary add-to-med-btn" data-name="${(drugName + '').replace(/"/g, '&quot;')}">💊 내 복용약에 저장</button>` : '';
   const medGuideBtn = `<button class="btn btn-secondary add-to-med-btn med-guide-btn" type="button">📋 복약 안내문</button>`;
 
@@ -713,6 +741,7 @@ function showDetail(source, drug) {
     ].filter(s => s.data && s.data.trim());
     detailContent.innerHTML = `
       ${contraindicationHtml}
+      ${durHtml}
       <div class="detail-section">
         <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         ${imgHtml}
@@ -750,6 +779,7 @@ function showDetail(source, drug) {
       ].filter(s => s.data && s.data.trim());
       detailContent.innerHTML = `
         ${contraindicationHtml}
+        ${durHtml}
         <div class="detail-section">
           <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
           ${imgHtml}
@@ -808,6 +838,7 @@ function showDetail(source, drug) {
     ];
     detailContent.innerHTML = `
       ${contraindicationHtml}
+      ${durHtml}
       <div class="detail-section">
         <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
         <h3>기본 정보</h3>
@@ -1287,6 +1318,18 @@ function namesMatchInteraction(nameSet, target) {
   });
 }
 
+function matchDurPair(names1, names2, pair) {
+  const norm = (s) => (s || '').replace(/\([^)]*\)/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const aParts = (pair.a || '').split(/\s*\+\s*/).map(s => norm(s)).filter(Boolean);
+  const bParts = (pair.b || '').split(/\s*\+\s*/).map(s => norm(s)).filter(Boolean);
+  const n1 = names1.map(norm);
+  const n2 = names2.map(norm);
+  const hasAll = (arr, parts) => parts.length > 0 && parts.every(p => arr.some(a => a === p || a.includes(p) || p.includes(a)));
+  const matchAB = hasAll(n1, aParts) && hasAll(n2, bParts);
+  const matchBA = hasAll(n1, bParts) && hasAll(n2, aParts);
+  return (matchAB || matchBA) && !/유효성분|연번/.test((pair.a || '') + (pair.b || ''));
+}
+
 checkInteractionBtn.addEventListener('click', () => {
   if (interactionDrugs.length < 2) {
     interactionResult.innerHTML = '<p class="warning">2개 이상의 약을 추가해 주세요.</p>';
@@ -1297,12 +1340,34 @@ checkInteractionBtn.addEventListener('click', () => {
     for (let j = i + 1; j < interactionDrugs.length; j++) {
       const names1 = getInteractionRelevantNames(interactionDrugs[i]);
       const names2 = getInteractionRelevantNames(interactionDrugs[j]);
-      for (const [drug, interactions] of Object.entries(INTERACTION_DATABASE)) {
+      const names1Norm = names1.map(n => normalizeDrugName(n));
+      const names2Norm = names2.map(n => normalizeDrugName(n));
+      for (const [drug, interactions] of Object.entries(INTERACTION_DATABASE || {})) {
         const match1 = namesMatchInteraction(names1, drug);
         const match2 = interactions.some(int => namesMatchInteraction(names2, int));
         if (match1 && match2) {
           found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 상호작용 가능`);
           break;
+        }
+      }
+      if (typeof DUR_CONTRAINDICATION_PAIRS !== 'undefined') {
+        for (const pair of DUR_CONTRAINDICATION_PAIRS) {
+          if (matchDurPair(names1Norm, names2Norm, pair)) {
+            const note = pair.note ? ` (${pair.note})` : '';
+            found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 병용금기${note}`);
+              break;
+          }
+        }
+      }
+      if (typeof DUR_EFFICACY_GROUPS !== 'undefined') {
+        for (const groupName of Object.keys(DUR_EFFICACY_GROUPS)) {
+          const ingredients = DUR_EFFICACY_GROUPS[groupName] || [];
+          const inGroup1 = names1Norm.some(n1 => ingredients.some(ing => normalizeDrugName(ing) === n1 || n1.includes(normalizeDrugName(ing))));
+          const inGroup2 = names2Norm.some(n2 => ingredients.some(ing => normalizeDrugName(ing) === n2 || n2.includes(normalizeDrugName(ing))));
+          if (inGroup1 && inGroup2) {
+            found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 효능중복주의 (${groupName})`);
+            break;
+          }
         }
       }
     }
