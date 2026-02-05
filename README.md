@@ -55,6 +55,27 @@ node scripts/convert-csv.js medicine_data.csv
 
 또는 `scripts/csv-path.txt`에 CSV 전체 경로를 한 줄로 적고 `node scripts/convert-csv.js` 실행 (한글 경로 인코딩 이슈 시).
 
+## 약국 데이터 갱신
+
+**API로 수집 (14,000+곳):**
+```bash
+node scripts/fetch-pharmacy-api.js
+```
+시·도·군·구별 페이지네이션으로 전국 약국 수집. `MAX_PHARMACIES=30000 node scripts/fetch-pharmacy-api.js`로 상한 조정 가능.
+
+**행정안전부 CSV 변환 (65,000+곳):**
+공공데이터포털에서 [전국약국표준데이터](https://www.data.go.kr/data/15096290/fileData.do) CSV 다운로드 후:
+```bash
+node scripts/convert-pharmacy-standard-csv.js [다운로드한_CSV경로]
+```
+
+**약국정보서비스(2025.12) CSV 병합:**
+`pharmacy-csv-path.txt`에 CSV 전체 경로를 한 줄로 적은 뒤:
+```bash
+node scripts/convert-pharmacy-egis-csv.js
+```
+또는 `node scripts/convert-pharmacy-egis-csv.js "경로"` 로 직접 전달.
+
 ## e약은요 API 사용 (선택사항)
 
 공공데이터포털(https://www.data.go.kr)에서 '의약품개요정보(e약은요)', '국립중앙의료원 전국 약국정보조회' 활용신청 후 인증키를 발급받아 `config.js`의 `DATA_GO_KR_API_KEY`에 입력하면, 의약품 상세정보와 근처 약국 검색을 사용할 수 있습니다. API 키 없이도 로컬 DB와 OpenFDA로 의약품 검색이 가능합니다.

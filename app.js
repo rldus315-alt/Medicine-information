@@ -1836,7 +1836,7 @@ function initPharmacy() {
         `;
         }).join('');
         const more = embeddedItems.length > 50 ? `<p class="pharmacy-more">외 ${embeddedItems.length - 50}곳 (상위 50곳만 표시)</p>` : '';
-        resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">전국 약국 1,700곳 (공공데이터). 방문 전 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
+        resultsEl.innerHTML = cardsHtml + more + '<p class="pharmacy-source-note">전국 약국 ' + (typeof PHARMACY_DATA !== 'undefined' && PHARMACY_DATA ? PHARMACY_DATA.length.toLocaleString() : '14,000') + '곳 (공공데이터). 방문 전 전화 확인 권장. · <a href="https://www.e-gen.or.kr/egen/search_pharmacy.do" target="_blank" rel="noopener">E-GEN 약국 찾기</a></p>';
       } else {
         resultsEl.innerHTML = '<p class="pharmacy-empty">해당 지역에 등록된 약국이 없습니다. 시·군·구를 바꾸거나 약국명으로 검색해 보세요.</p>';
       }
