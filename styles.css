@@ -421,8 +421,8 @@ body {
 .drug-card-inner { display: flex; gap: 1rem; align-items: flex-start; }
 .drug-card-image-wrap {
   flex-shrink: 0;
-  width: 72px;
-  height: 72px;
+  width: 88px;
+  height: 88px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -430,9 +430,20 @@ body {
   border-radius: 8px;
   overflow: hidden;
 }
-.drug-card-image { max-width: 72px; max-height: 72px; object-fit: contain; }
-.drug-card-image-placeholder { font-size: 2rem; opacity: 0.4; }
+.drug-card-image { max-width: 88px; max-height: 88px; object-fit: contain; }
+.drug-card-image-placeholder { font-size: 2.5rem; opacity: 0.5; }
 .drug-card-body { flex: 1; min-width: 0; position: relative; }
+.drug-card-intrc {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #F0F7FF;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--primary);
+}
+.drug-card-intrc strong { color: var(--primary); font-size: 0.75rem; }
+.drug-card-intrc p { margin: 0.25rem 0 0; line-height: 1.4; }
 .drug-card-interaction {
   margin-top: 0.5rem;
   padding: 0.5rem;
@@ -441,6 +452,7 @@ body {
   font-size: 0.8rem;
   color: var(--warning);
 }
+.drug-card-interaction strong { font-size: 0.75rem; }
 .drug-card-interaction p { margin: 0.2rem 0; }
 
 .drug-card:hover {
@@ -503,6 +515,11 @@ body {
 
 .detail-section p { font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); }
 .detail-content .drug-image { max-width: 120px; max-height: 120px; object-fit: contain; margin-bottom: 1rem; border-radius: var(--radius); }
+.detail-content .drug-image-placeholder-wrap {
+  width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); border-radius: var(--radius); margin-bottom: 1rem;
+}
+.detail-content .drug-image-loading { font-size: 3rem; opacity: 0.5; }
 .detail-source { font-size: 0.8rem; color: var(--text-muted); margin-top: 1rem; }
 
 .interaction-input, .medication-input { display: flex; gap: 0.5rem; margin-bottom: 1rem; }

@@ -753,6 +753,44 @@ async function searchDrugs(query) {
   }
 }
 
+// FDA 영문명 → e약은요 이미지 검색용 한글명 (SEARCH_TERM_ALIASES 기반)
+function getKoreanNameForImage(brand, generic) {
+  const b = (brand || '').trim();
+  const g = (generic || '').trim().toLowerCase();
+  const name = g || b.toLowerCase();
+  if (!name) return '';
+  if (typeof SEARCH_TERM_ALIASES !== 'undefined') {
+    const aliases = SEARCH_TERM_ALIASES[name] || SEARCH_TERM_ALIASES[g] || SEARCH_TERM_ALIASES[b];
+    if (aliases && aliases.length) {
+      const kr = aliases.find(a => /[가-힣]/.test(a));
+      if (kr) return kr;
+    }
+  }
+  return g || b; // 영문명 그대로 시도
+}
+
+// 의약품별 상호작용 정보 추출 (API/DB 원문)
+function getDrugInteractionInfo(source, drug) {
+  if (source === 'eyak') {
+    const t = (drug.intrcQesitm || '').trim();
+    return t && t !== '-' ? addSpacing(t) : '';
+  }
+  if (source === 'korean') {
+    let ext = drug.efcyQesitm || drug.intrcQesitm ? drug : null;
+    if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
+      const ei = DRUG_EXTENDED_INFO[drug.name] || DRUG_EXTENDED_INFO[drug.ingredient];
+      if (ei) ext = { ...drug, ...ei };
+    }
+    const t = (ext && ext.intrcQesitm || '').trim();
+    return t && t !== '-' ? addSpacing(t) : '';
+  }
+  if (source === 'fda') {
+    const t = (drug.drug_interactions?.[0] || '').trim();
+    return t ? addSpacing(t) : '';
+  }
+  return '';
+}
+
 function renderSearchResults(results) {
   searchResults.innerHTML = results.map((item, i) => {
     const imgPlaceholder = '<span class="drug-card-image-placeholder">&#128203;</span>';
@@ -762,9 +800,11 @@ function renderSearchResults(results) {
       const efcy = addSpacing((d.efcyQesitm || '').substring(0, 100));
       const warnings = checkContraindications(name, d);
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
+      const intrcText = getDrugInteractionInfo('eyak', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
       const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
-      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+      const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
         <div class="drug-card" data-id="${i}" data-source="eyak" data-img-name="${(name || '').replace(/"/g, '&quot;')}" data-img-seq="${d.itemSeq || ''}">
           <div class="drug-card-inner">
@@ -774,6 +814,7 @@ function renderSearchResults(results) {
               <h3>${name}</h3>
               <p>${d.entpName || ''}</p>
               ${efcy ? `<p class="drug-desc">${efcy}${(d.efcyQesitm || '').length > 100 ? '...' : ''}</p>` : ''}
+              ${intrcHtml}
               ${intHtml}
             </div>
           </div>
@@ -787,9 +828,11 @@ function renderSearchResults(results) {
       const category = d.category || '';
       const warnings = checkContraindications(name, d);
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
+      const intrcText = getDrugInteractionInfo('korean', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
       const imgHtml = d.image ? `<img src="${d.image}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
-      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+      const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
         <div class="drug-card" data-id="${i}" data-source="korean" data-img-name="${(name || '').replace(/"/g, '&quot;')}" data-img-seq="${d.itemSeq || ''}">
           <div class="drug-card-inner">
@@ -799,6 +842,7 @@ function renderSearchResults(results) {
               <h3>${name}</h3>
               <p>성분: ${ingredient}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
               ${category ? `<p class="drug-category">${addSpacing(category)}</p>` : ''}
+              ${intrcHtml}
               ${intHtml}
             </div>
           </div>
@@ -811,10 +855,13 @@ function renderSearchResults(results) {
     const purpose = drug.purpose?.[0]?.substring(0, 80) || drug.indications_and_usage?.[0]?.substring(0, 80) || '';
     const warnings = checkContraindications(brand || generic, drug);
     const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(brand || generic, drug) : [];
+    const intrcText = getDrugInteractionInfo('fda', drug);
     const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
-    const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+    const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
+    const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
+    const imgName = getKoreanNameForImage(brand, generic);
     return `
-      <div class="drug-card" data-id="${i}" data-source="fda">
+      <div class="drug-card" data-id="${i}" data-source="fda" data-img-name="${(imgName || '').replace(/"/g, '&quot;')}">
         <div class="drug-card-inner">
           <div class="drug-card-image-wrap">${imgPlaceholder}</div>
           <div class="drug-card-body">
@@ -822,6 +869,7 @@ function renderSearchResults(results) {
             <h3>${brand}</h3>
             <p>성분: ${generic}</p>
             ${purpose ? `<p>${purpose}...</p>` : ''}
+            ${intrcHtml}
             ${intHtml}
           </div>
         </div>
@@ -870,6 +918,25 @@ function addToMyMedications(name) {
   }
 }
 
+async function loadDetailImage() {
+  const wrap = detailContent.querySelector('.drug-image-placeholder-wrap[data-fetch-img="1"]');
+  if (!wrap || typeof fetchEyakImageForPill !== 'function') return;
+  const name = wrap.dataset.name;
+  const seq = wrap.dataset.seq || '';
+  if (!name) return;
+  try {
+    const imgUrl = await fetchEyakImageForPill(name, seq);
+    if (imgUrl) {
+      const img = document.createElement('img');
+      img.src = imgUrl;
+      img.alt = name;
+      img.className = 'drug-image';
+      img.onerror = () => { img.style.display = 'none'; };
+      wrap.replaceWith(img);
+    }
+  } catch (_) {}
+}
+
 function showDetail(source, drug) {
   currentDetailDrug = { source, data: drug };
   const drugName = source === 'eyak' ? (drug.itemName || '') : source === 'korean' ? (drug.name || '') : (drug.openfda?.brand_name?.[0] || drug.openfda?.generic_name?.[0] || '');
@@ -882,7 +949,7 @@ function showDetail(source, drug) {
 
   if (source === 'eyak') {
     const d = drug;
-    const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${d.itemName}" class="drug-image" onerror="this.style.display='none'">` : '';
+    const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${d.itemName}" class="drug-image" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.itemName || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     const sections = [
       { title: '효능·효과', data: d.efcyQesitm },
       { title: '사용법', data: d.useMethodQesitm },
@@ -911,9 +978,10 @@ function showDetail(source, drug) {
       `).join('')}
       <p class="detail-source">출처: 식품의약품안전처 의약품개요정보(e약은요)</p>
     `;
+    loadDetailImage();
   } else if (source === 'korean') {
     const d = drug;
-    const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '';
+    const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.name || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     let ext = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm ? d : null;
     if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
       const extInfo = DRUG_EXTENDED_INFO[d.name] || DRUG_EXTENDED_INFO[d.ingredient];
@@ -952,6 +1020,7 @@ function showDetail(source, drug) {
         `).join('')}
         <p class="detail-source">출처: ${ext === d ? '식품의약품안전처 의약품개요정보(e약은요) merged' : '식품의약품안전처 의약품통합정보시스템(의약품안전나라)'}</p>
       `;
+      loadDetailImage();
     } else {
       detailContent.innerHTML = `
         ${contraindicationHtml}
@@ -976,6 +1045,7 @@ function showDetail(source, drug) {
         ` : ''}
         <p class="detail-source">출처: 식품의약품안전처 의약품통합정보시스템</p>
       `;
+      loadDetailImage();
     }
   } else {
     const brand = drug.openfda?.brand_name?.[0] || '알 수 없음';
@@ -989,11 +1059,14 @@ function showDetail(source, drug) {
       { title: '약물 상호작용', data: drug.drug_interactions?.[0] || '정보 없음' },
       { title: '임신·수유', data: drug.pregnancy_or_breast_feeding?.[0] || '정보 없음' },
     ];
+    const fdaImgName = getKoreanNameForImage(brand, generic);
+    const fdaImgHtml = fdaImgName ? '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + fdaImgName.replace(/"/g, '&quot;') + '" data-seq=""><span class="drug-image-loading">&#128203;</span></div>' : '';
     detailContent.innerHTML = `
       ${contraindicationHtml}
       ${durHtml}
       <div class="detail-section">
         <div class="detail-actions">${addToMedBtn}${medGuideBtn}</div>
+        ${fdaImgHtml}
         <h3>기본 정보</h3>
         <p><strong>상품명:</strong> ${brand}</p>
         <p><strong>성분명:</strong> ${generic}</p>
@@ -1005,6 +1078,7 @@ function showDetail(source, drug) {
         </div>
       `).join('')}
     `;
+    if (fdaImgName) loadDetailImage();
   }
   detailContent.querySelectorAll('.add-to-med-btn').forEach(btn => {
     if (btn.dataset.name) {
@@ -1936,17 +2010,31 @@ function initNotebook() {
     alert('복약수첩이 저장되었습니다.');
   });
 
-  qrBtn?.addEventListener('click', () => {
+  qrBtn?.addEventListener('click', async () => {
     notebookData = { ...notebookData, ...getNotebookFormData() };
     saveNotebook();
-    const text = notebookToQrText(notebookData);
-    qrWrap.innerHTML = '';
-    if (typeof QRCode !== 'undefined') {
-      new QRCode(qrWrap, { text, width: 256, height: 256 });
-      qrSection?.classList.remove('hidden');
-    } else {
-      qrWrap.innerHTML = '<p class="warning">QR 코드 라이브러리를 불러올 수 없습니다.</p>';
-      qrSection?.classList.remove('hidden');
+    const viewerUrl = notebookToViewerUrl(notebookData);
+    qrWrap.innerHTML = '<p class="loading">QR 코드 생성 중...</p>';
+    qrSection?.classList.remove('hidden');
+    const showQr = () => {
+      const apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(viewerUrl);
+      const img = document.createElement('img');
+      img.src = apiUrl;
+      img.alt = '복약수첩 QR코드';
+      img.onerror = () => { qrWrap.innerHTML = '<p class="warning">QR 코드 생성에 실패했습니다. 네트워크를 확인해 주세요.</p>'; };
+      qrWrap.innerHTML = '';
+      qrWrap.appendChild(img);
+    };
+    try {
+      if (typeof QRCode !== 'undefined') {
+        qrWrap.innerHTML = '';
+        new QRCode(qrWrap, { text: viewerUrl, width: 256, height: 256 });
+        if (!qrWrap.querySelector('canvas') && !qrWrap.querySelector('img')) showQr();
+      } else {
+        showQr();
+      }
+    } catch (e) {
+      showQr();
     }
   });
 
