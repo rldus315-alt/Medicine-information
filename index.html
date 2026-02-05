@@ -92,8 +92,12 @@
               <ellipse class="body-outline" cx="60" cy="20" rx="16" ry="18" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2" filter="url(#bodyShadow)"/>
               <!-- 목 -->
               <rect class="body-outline" x="52" y="38" width="16" height="10" rx="2" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
-              <!-- 몸통 (가슴+배) -->
-              <path class="body-outline" d="M52 48 L30 50 L25 60 L25 115 L38 168 L52 172 L68 172 L82 168 L95 115 L95 60 L90 50 L68 48 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2"/>
+              <!-- 가슴 (상부 흉부) -->
+              <path class="body-outline body-chest" d="M52 48 L30 50 L25 60 L25 95 L95 95 L95 60 L90 50 L68 48 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2"/>
+              <!-- 위장 (하부 복부) -->
+              <path class="body-outline body-stomach" d="M25 95 L25 115 L38 168 L52 172 L68 172 L82 168 L95 115 L95 95 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2"/>
+              <!-- 가슴-위장 경계선 -->
+              <line x1="25" y1="95" x2="95" y2="95" stroke="#9BC4ED" stroke-width="0.6"/>
               <!-- 팔 왼쪽 -->
               <ellipse class="body-outline" cx="18" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
               <!-- 팔 오른쪽 -->
