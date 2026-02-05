@@ -95,13 +95,25 @@
               <path class="body-outline" d="M54 33 L50 42 L48 48 L72 48 L70 42 L66 33 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 가슴: 어깨 넓음 → 허리로 좁아짐 -->
               <path class="body-outline body-chest" d="M48 48 Q44 50 40 55 L32 58 Q26 65 26 78 L26 98 L94 98 L94 78 Q94 65 88 58 L80 55 Q76 50 72 48 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 위장: 허리 → 골반 → 다리 -->
-              <path class="body-outline body-stomach" d="M26 98 Q24 108 26 120 L28 140 Q32 160 40 176 L48 186 L56 192 L60 194 L64 192 L72 186 L80 176 L88 160 L92 140 L94 120 Q96 108 94 98 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 위장: 허리 → 골반 (다리 연결부) -->
+              <path class="body-outline body-stomach" d="M26 98 Q24 108 28 125 L32 148 Q36 162 40 168 L46 172 L74 172 L80 168 L84 162 L88 148 L92 125 Q96 108 94 98 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <path d="M26 98 Q30 100 60 100 Q90 100 94 98" stroke="#B89A6F" stroke-width="0.5" fill="none"/>
-              <!-- 팔 왼쪽: 몸통에서 살짝 벌어진 형태 -->
-              <path class="body-outline" d="M32 58 Q22 62 16 80 Q12 95 18 108 Q22 116 28 110 L26 88 Q24 70 30 60 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 다리 왼쪽: 허벅지 → 종아리 -->
+              <path class="body-outline" d="M46 172 L42 180 L40 190 L42 198 L48 198 L50 190 L48 180 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 다리 오른쪽 -->
+              <path class="body-outline" d="M74 172 L78 180 L80 190 L78 198 L72 198 L70 190 L72 180 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 발 왼쪽 -->
+              <ellipse class="body-outline" cx="46" cy="198" rx="5" ry="2" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 발 오른쪽 -->
+              <ellipse class="body-outline" cx="74" cy="198" rx="5" ry="2" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 팔 왼쪽: 어깨 → 팔꿈치 → 손 -->
+              <path class="body-outline" d="M32 58 Q20 65 14 85 Q10 100 16 112 Q20 120 26 118 L24 100 Q22 82 28 68 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 손 왼쪽 -->
+              <ellipse class="body-outline" cx="18" cy="118" rx="5" ry="6" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 팔 오른쪽 -->
-              <path class="body-outline" d="M88 58 Q98 62 104 80 Q108 95 102 108 Q98 116 92 110 L94 88 Q96 70 90 60 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <path class="body-outline" d="M88 58 Q100 65 106 85 Q110 100 104 112 Q100 120 94 118 L96 100 Q98 82 92 68 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 손 오른쪽 -->
+              <ellipse class="body-outline" cx="102" cy="118" rx="5" ry="6" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 클릭 영역 (data-part: 부위명) -->
               <ellipse class="body-part" data-part="머리" cx="60" cy="18" rx="14" ry="16"/>
               <ellipse class="body-part" data-part="가슴" cx="60" cy="72" rx="30" ry="22"/>
@@ -381,7 +393,7 @@
   <script>if(typeof PHARMACY_DATA==='undefined'){var PHARMACY_DATA=[];}</script>
   <script src="korean-drugs.js"></script>
   <script>if(typeof KOREAN_DRUG_DATABASE==='undefined'){var KOREAN_DRUG_DATABASE=[];}</script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
   <script>
     if (typeof KOREAN_TO_ENGLISH === 'undefined') {
       document.body.innerHTML = '<p style="padding:2rem;color:red;">data.js를 불러올 수 없습니다. index.html과 같은 폴더에 data.js, app.js, styles.css가 있는지 확인하세요.</p>';

@@ -344,10 +344,10 @@ async function fetchPillApi(params) {
   }
 }
 
-// e약은요 API로 품목명/itemSeq→itemImage 조회 (낱알 이미지용)
+// e약은요 API + 낱알 API로 품목명/itemSeq→itemImage 조회
 async function fetchEyakImageForPill(itemName, itemSeq) {
   const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
-  if (!apiKey) return '';
+  const pillKey = (typeof DATA_GO_KR_PILL_API_KEY !== 'undefined' && DATA_GO_KR_PILL_API_KEY) ? DATA_GO_KR_PILL_API_KEY.trim() : apiKey;
   const tryFetch = async (targetUrl) => {
     const res = await fetch(targetUrl);
     if (!res.ok) throw new Error(res.statusText);
@@ -357,16 +357,27 @@ async function fetchEyakImageForPill(itemName, itemSeq) {
     if (!items) return null;
     return Array.isArray(items) ? items : [items];
   };
-  if (itemSeq) {
-    const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
-    try {
-      const items = await tryFetch(url);
+  if (apiKey) {
+    if (itemSeq) {
+      const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
+      try {
+        const items = await tryFetch(url);
+        if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
+      } catch (_) {}
+    }
+    if (itemName) {
+      const items = await fetchEyakApi(itemName);
       if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
-    } catch (_) {}
+    }
   }
-  if (itemName) {
-    const items = await fetchEyakApi(itemName);
-    if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
+  if (pillKey && itemName) {
+    try {
+      const pillItems = await fetchPillApi({ itemName });
+      if (pillItems && pillItems[0]) {
+        const img = (pillItems[0].itemImage || pillItems[0].ITEM_IMAGE || '').trim();
+        if (img) return img;
+      }
+    } catch (_) {}
   }
   return '';
 }
@@ -802,7 +813,7 @@ function renderSearchResults(results) {
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const intrcText = getDrugInteractionInfo('eyak', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
-      const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
+      const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${name}" class="drug-card-image" onerror="this.classList.add('img-failed');this.style.display='none'">` : imgPlaceholder;
       const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
@@ -830,7 +841,7 @@ function renderSearchResults(results) {
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const intrcText = getDrugInteractionInfo('korean', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
-      const imgHtml = d.image ? `<img src="${d.image}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
+      const imgHtml = d.image ? `<img src="${d.image}" alt="${name}" class="drug-card-image" onerror="this.classList.add('img-failed');this.style.display='none'">` : imgPlaceholder;
       const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
@@ -894,19 +905,25 @@ async function loadSearchResultImages() {
     const seq = card.dataset.imgSeq || '';
     if (!name) continue;
     const wrap = card.querySelector('.drug-card-image-wrap');
-    if (!wrap || wrap.querySelector('img[src]')) continue;
+    if (!wrap) continue;
+    const existingImg = wrap.querySelector('img');
+    if (existingImg && !existingImg.classList.contains('img-failed')) continue;
     try {
       const imgUrl = await fetchEyakImageForPill(name, seq);
-      if (imgUrl && wrap) {
+      wrap.innerHTML = '';
+      if (imgUrl) {
         const img = document.createElement('img');
         img.src = imgUrl;
         img.alt = name;
         img.className = 'drug-card-image';
         img.onerror = () => { img.style.display = 'none'; };
-        wrap.innerHTML = '';
         wrap.appendChild(img);
+      } else {
+        wrap.innerHTML = '<span class="drug-card-image-placeholder">&#128203;</span>';
       }
-    } catch (_) {}
+    } catch (_) {
+      wrap.innerHTML = '<span class="drug-card-image-placeholder">&#128203;</span>';
+    }
   }
 }
 
