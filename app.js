@@ -277,6 +277,8 @@ function printMedicationGuide() {
 const FDA_API = 'https://api.fda.gov/drug/label.json';
 // e약은요 API (공공데이터포털)
 const EYAK_API = 'http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
+// 의약품낱알정보식별조회 API (공공데이터포털)
+const PILL_API = 'http://apis.data.go.kr/1471000/DrbPilDrugInfoService/getDrbPilDrugInfo';
 // 국립중앙의료원 전국 약국 정보 조회 API
 const PHARMACY_API = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire';
 const CORS_PROXIES = [
@@ -309,6 +311,64 @@ async function fetchEyakApi(itemName) {
     }
     return null;
   }
+}
+
+// 의약품낱알정보식별조회 API (모양/색상/각인으로 검색)
+const PILL_SHAPE_KR = { round: '원형', oval: '타원형', capsule: '캡슐', rectangle: '사각형', diamond: '다이아몬드', hexagon: '육각형', octagon: '팔각형', triangle: '삼각형' };
+const PILL_COLOR_KR = { white: '흰색', yellow: '노란색', orange: '주황색', red: '빨간색', pink: '분홍색', blue: '파란색', green: '초록색', brown: '갈색', gray: '회색' };
+async function fetchPillApi(params) {
+  const apiKey = (typeof DATA_GO_KR_PILL_API_KEY !== 'undefined' && DATA_GO_KR_PILL_API_KEY) ? DATA_GO_KR_PILL_API_KEY.trim() : '';
+  if (!apiKey) return [];
+  const q = new URLSearchParams({ serviceKey: apiKey, numOfRows: '30', pageNo: '1', type: 'json' });
+  if (params.itemName) q.set('itemName', params.itemName);
+  if (params.drugShape) q.set('drugShape', params.drugShape);
+  if (params.drugColor) q.set('drugColor', params.drugColor);
+  if (params.printFront) q.set('printFront', params.printFront);
+  const url = PILL_API + '?' + q.toString();
+  const tryFetch = async (targetUrl) => {
+    const res = await fetch(targetUrl);
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    if (data.header?.resultCode !== '00' && data.header?.resultCode !== '0') return [];
+    let items = data.body?.items;
+    if (!items) return [];
+    return Array.isArray(items) ? items : [items];
+  };
+  try {
+    return await tryFetch(url);
+  } catch (e) {
+    for (const toProxyUrl of CORS_PROXIES) {
+      try { return await tryFetch(toProxyUrl(url)); } catch (_) { continue; }
+    }
+    return [];
+  }
+}
+
+// e약은요 API로 품목명/itemSeq→itemImage 조회 (낱알 이미지용)
+async function fetchEyakImageForPill(itemName, itemSeq) {
+  const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
+  if (!apiKey) return '';
+  const tryFetch = async (targetUrl) => {
+    const res = await fetch(targetUrl);
+    if (!res.ok) throw new Error(res.statusText);
+    const data = await res.json();
+    if (data.header?.resultCode !== '00' && data.header?.resultCode !== '0') return null;
+    let items = data.body?.items;
+    if (!items) return null;
+    return Array.isArray(items) ? items : [items];
+  };
+  if (itemSeq) {
+    const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
+    try {
+      const items = await tryFetch(url);
+      if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
+    } catch (_) {}
+  }
+  if (itemName) {
+    const items = await fetchEyakApi(itemName);
+    if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
+  }
+  return '';
 }
 
 // CORS 우회 - 직접 요청 실패 시 프록시 사용
@@ -1386,7 +1446,7 @@ const pillImprint = document.getElementById('pillImprint');
 const identifyPillBtn = document.getElementById('identifyPillBtn');
 const pillResults = document.getElementById('pillResults');
 
-identifyPillBtn.addEventListener('click', () => {
+identifyPillBtn.addEventListener('click', async () => {
   const shape = pillShape.value;
   const color = pillColor.value;
   const imprint = pillImprint.value.trim().toUpperCase();
@@ -1394,25 +1454,77 @@ identifyPillBtn.addEventListener('click', () => {
     pillResults.innerHTML = '<p class="warning">모양, 색상, 각인 중 하나 이상을 선택해 주세요.</p>';
     return;
   }
-  const matches = PILL_DATABASE.filter(p => {
+  const shapeLabels = { round: '원형', oval: '타원형', capsule: '캡슐형', rectangle: '사각형', diamond: '다이아몬드', hexagon: '육각형', octagon: '팔각형', triangle: '삼각형' };
+  const colorLabels = { white: '흰색', yellow: '노란색', orange: '주황색', red: '빨간색', pink: '분홍색', blue: '파란색', green: '초록색', brown: '갈색', gray: '회색' };
+
+  let matches = PILL_DATABASE.filter(p => {
     const shapeMatch = !shape || p.shape === shape;
     const colorMatch = !color || p.color === color;
     const imprintMatch = !imprint || p.imprint.toUpperCase() === imprint;
     return shapeMatch && colorMatch && imprintMatch;
   });
-  const shapeLabels = { round: '원형', oval: '타원형', capsule: '캡슐형', rectangle: '사각형', diamond: '다이아몬드', hexagon: '육각형', octagon: '팔각형', triangle: '삼각형' };
-  const colorLabels = { white: '흰색', yellow: '노란색', orange: '주황색', red: '빨간색', pink: '분홍색', blue: '파란색', green: '초록색', brown: '갈색', gray: '회색' };
+
+  const apiParams = {};
+  if (shape) apiParams.drugShape = PILL_SHAPE_KR[shape] || shape;
+  if (color) apiParams.drugColor = PILL_COLOR_KR[color] || color;
+  if (imprint) apiParams.printFront = imprint;
+  if (Object.keys(apiParams).length > 0 && typeof fetchPillApi === 'function') {
+    pillResults.innerHTML = '<div class="loading">낱알 정보 검색 중...</div>';
+    const apiItems = await fetchPillApi(apiParams);
+    if (apiItems && apiItems.length > 0) {
+      const seen = new Set(matches.map(m => (m.name || '') + '|' + (m.imprint || '')));
+      apiItems.forEach(a => {
+        const name = (a.itemName || a.ITEM_NAME || '').trim();
+        const imprintApi = (a.printFront || a.PRINT_FRONT || a.printBack || a.PRINT_BACK || '').trim();
+        const key = name + '|' + imprintApi;
+        if (name && !seen.has(key)) {
+          seen.add(key);
+          matches.push({
+            name,
+            ingredient: (a.ingrName || a.INGR_NAME || a.ingrName1 || '').trim(),
+            shape: shape || '',
+            color: color || '',
+            imprint: imprintApi,
+            strength: '',
+            itemSeq: (a.itemSeq || a.ITEM_SEQ || '').trim(),
+            itemImage: (a.itemImage || a.ITEM_IMAGE || '').trim(),
+            fromApi: true
+          });
+        }
+      });
+    }
+  }
+
   if (matches.length === 0) {
     pillResults.innerHTML = '<p class="warning">검색 조건에 맞는 알약이 없습니다. 조건을 완화하거나 다른 각인을 입력해 보세요.</p>';
     return;
   }
-  pillResults.innerHTML = matches.map(p => `
-    <div class="drug-card pill-card">
-      <h3>${p.name}</h3>
-      <p>성분: ${p.ingredient} | ${p.strength}</p>
-      <p class="pill-meta">모양: ${shapeLabels[p.shape] || p.shape} / 색: ${colorLabels[p.color] || p.color} / 각인: ${p.imprint}</p>
-    </div>
-  `).join('');
+
+  pillResults.innerHTML = matches.map(p => {
+    const imgPlaceholder = p.itemImage ? `<img src="${p.itemImage}" alt="${(p.name || '').replace(/"/g, '&quot;')}" class="pill-image" onerror="this.style.display='none'">` : '<span class="pill-image-placeholder">&#128203;</span>';
+    return `<div class="drug-card pill-card" data-pill-name="${(p.name || '').replace(/"/g, '&quot;')}">
+      <div class="pill-card-image">${imgPlaceholder}</div>
+      <h3>${(p.name || '-').replace(/</g, '&lt;')}</h3>
+      <p>성분: ${(p.ingredient || '-').replace(/</g, '&lt;')}${p.strength ? ' | ' + p.strength : ''}</p>
+      <p class="pill-meta">모양: ${shapeLabels[p.shape] || p.shape || '-'} / 색: ${colorLabels[p.color] || p.color || '-'} / 각인: ${p.imprint || '-'}</p>
+    </div>`;
+  }).join('');
+
+  const cardsNeedingImage = matches.filter(p => !p.itemImage && p.name);
+  if (cardsNeedingImage.length > 0 && typeof fetchEyakImageForPill === 'function') {
+    for (let i = 0; i < cardsNeedingImage.length; i++) {
+      const p = cardsNeedingImage[i];
+      const imgUrl = await fetchEyakImageForPill(p.name, p.itemSeq);
+      if (imgUrl) {
+        const cards = pillResults.querySelectorAll('.pill-card');
+        const card = Array.from(cards).find(c => (c.dataset.pillName || '') === (p.name || ''));
+        if (card) {
+          const imgWrap = card.querySelector('.pill-card-image');
+          if (imgWrap) imgWrap.innerHTML = `<img src="${imgUrl}" alt="${(p.name || '').replace(/"/g, '&quot;')}" class="pill-image" onerror="this.style.display='none'">`;
+        }
+      }
+    }
+  }
 });
 
 // My Medications
@@ -1670,6 +1782,219 @@ function initProfileForm() {
   });
 }
 initProfileForm();
+
+// ========== 복약수첩 ==========
+const NOTEBOOK_KEY = 'medicine_notebook';
+let notebookData = {
+  name: '', birth: '', blood: '', emergency: '',
+  conditions: '', allergy: '', pregnancy: '',
+  medications: [],
+  notes: ''
+};
+
+function loadNotebook() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NOTEBOOK_KEY) || '{}');
+    notebookData = {
+      name: saved.name || '',
+      birth: saved.birth || '',
+      blood: saved.blood || '',
+      emergency: saved.emergency || '',
+      conditions: saved.conditions || '',
+      allergy: saved.allergy || '',
+      pregnancy: saved.pregnancy || '',
+      medications: Array.isArray(saved.medications) ? saved.medications : [],
+      notes: saved.notes || ''
+    };
+  } catch (_) {}
+}
+
+function saveNotebook() {
+  localStorage.setItem(NOTEBOOK_KEY, JSON.stringify(notebookData));
+}
+
+function getNotebookFormData() {
+  return {
+    name: (document.getElementById('notebookName')?.value || '').trim(),
+    birth: (document.getElementById('notebookBirth')?.value || '').trim(),
+    blood: (document.getElementById('notebookBlood')?.value || '').trim(),
+    emergency: (document.getElementById('notebookEmergency')?.value || '').trim(),
+    conditions: (document.getElementById('notebookConditions')?.value || '').trim(),
+    allergy: (document.getElementById('notebookAllergy')?.value || '').trim(),
+    pregnancy: (document.getElementById('notebookPregnancy')?.value || '').trim(),
+    medications: notebookData.medications,
+    notes: (document.getElementById('notebookNotes')?.value || '').trim()
+  };
+}
+
+function setNotebookFormData(data) {
+  const d = data || notebookData;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('notebookName', d.name);
+  set('notebookBirth', d.birth);
+  set('notebookBlood', d.blood);
+  set('notebookEmergency', d.emergency);
+  set('notebookConditions', d.conditions);
+  set('notebookAllergy', d.allergy);
+  set('notebookPregnancy', d.pregnancy);
+  set('notebookNotes', d.notes);
+}
+
+function renderNotebookMedList() {
+  const listEl = document.getElementById('notebookMedList');
+  if (!listEl) return;
+  if (notebookData.medications.length === 0) {
+    listEl.innerHTML = '<p class="notebook-med-empty">등록된 약이 없습니다.</p>';
+    return;
+  }
+  listEl.innerHTML = notebookData.medications.map((m, i) => `
+    <div class="notebook-med-item">
+      <span class="notebook-med-name">${(m.name || '').replace(/</g, '&lt;')}</span>
+      ${(m.dosage || '') ? `<span class="notebook-med-dosage">${(m.dosage || '').replace(/</g, '&lt;')}</span>` : ''}
+      <button type="button" class="notebook-med-remove" data-i="${i}">×</button>
+    </div>
+  `).join('');
+  listEl.querySelectorAll('.notebook-med-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      notebookData.medications.splice(parseInt(btn.dataset.i), 1);
+      renderNotebookMedList();
+    });
+  });
+}
+
+function notebookToQrText(data) {
+  const d = data || getNotebookFormData();
+  const lines = [
+    '=== 복약수첩 ===',
+    `이름: ${d.name || '-'}`,
+    `생년월일: ${d.birth || '-'}`,
+    `혈액형: ${d.blood || '-'}`,
+    `비상연락처: ${d.emergency || '-'}`,
+    `기저질환: ${d.conditions || '-'}`,
+    `알레르기: ${d.allergy || '-'}`,
+    `임신/수유: ${d.pregnancy || '-'}`,
+    '--- 복용약 ---',
+    ...(d.medications || []).map(m => `• ${m.name || '-'}${m.dosage ? ' (' + m.dosage + ')' : ''}`),
+    '--- 비고 ---',
+    d.notes || '-',
+    `작성일: ${new Date().toLocaleDateString('ko-KR')}`
+  ];
+  return lines.join('\n');
+}
+
+function notebookToViewerUrl(data) {
+  const d = data || getNotebookFormData();
+  const payload = JSON.stringify({
+    name: d.name, birth: d.birth, blood: d.blood, emergency: d.emergency,
+    conditions: d.conditions, allergy: d.allergy, pregnancy: d.pregnancy,
+    medications: d.medications || [],
+    notes: d.notes,
+    updatedAt: new Date().toISOString()
+  });
+  const base64 = btoa(unescape(encodeURIComponent(payload))).replace(/\+/g, '-').replace(/\//g, '_');
+  const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+  return base + 'notebook-view.html#' + base64;
+}
+
+function initNotebook() {
+  loadNotebook();
+  const nameEl = document.getElementById('notebookName');
+  const syncProfileBtn = document.getElementById('notebookSyncProfile');
+  const syncMedsBtn = document.getElementById('notebookSyncMeds');
+  const medInput = document.getElementById('notebookMedInput');
+  const medDosage = document.getElementById('notebookMedDosage');
+  const addMedBtn = document.getElementById('notebookAddMed');
+  const saveBtn = document.getElementById('notebookSaveBtn');
+  const qrBtn = document.getElementById('notebookQrBtn');
+  const qrSection = document.getElementById('notebookQrSection');
+  const qrWrap = document.getElementById('notebookQrWrap');
+  const qrDownloadBtn = document.getElementById('notebookQrDownload');
+
+  if (!nameEl) return;
+
+  setNotebookFormData();
+  renderNotebookMedList();
+
+  syncProfileBtn?.addEventListener('click', () => {
+    document.getElementById('notebookConditions').value = (userProfile.conditions || []).join(', ');
+    document.getElementById('notebookAllergy').value = userProfile.allergy || '';
+    document.getElementById('notebookPregnancy').value = userProfile.pregnancy || '';
+  });
+
+  syncMedsBtn?.addEventListener('click', () => {
+    notebookData.medications = myMedications.map(m => ({
+      name: getMedicationName(m),
+      dosage: (m.dosage || '').trim()
+    }));
+    renderNotebookMedList();
+  });
+
+  addMedBtn?.addEventListener('click', () => {
+    const name = (medInput?.value || '').trim();
+    if (!name) return;
+    const dosage = (medDosage?.value || '').trim();
+    notebookData.medications.push({ name, dosage });
+    renderNotebookMedList();
+    if (medInput) medInput.value = '';
+    if (medDosage) medDosage.value = '';
+  });
+
+  saveBtn?.addEventListener('click', () => {
+    notebookData = { ...notebookData, ...getNotebookFormData() };
+    saveNotebook();
+    alert('복약수첩이 저장되었습니다.');
+  });
+
+  qrBtn?.addEventListener('click', () => {
+    notebookData = { ...notebookData, ...getNotebookFormData() };
+    saveNotebook();
+    const text = notebookToQrText(notebookData);
+    qrWrap.innerHTML = '';
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(qrWrap, { text, width: 256, height: 256 });
+      qrSection?.classList.remove('hidden');
+    } else {
+      qrWrap.innerHTML = '<p class="warning">QR 코드 라이브러리를 불러올 수 없습니다.</p>';
+      qrSection?.classList.remove('hidden');
+    }
+  });
+
+  qrDownloadBtn?.addEventListener('click', async () => {
+    const canvas = qrWrap.querySelector('canvas');
+    const img = qrWrap.querySelector('img');
+    let dataUrl = '';
+    if (canvas) dataUrl = canvas.toDataURL('image/png');
+    else if (img?.src && img.src.startsWith('data:')) dataUrl = img.src;
+    if (dataUrl) {
+      const link = document.createElement('a');
+      link.download = '복약수첩-QR코드.png';
+      link.href = dataUrl;
+      link.click();
+    } else {
+      const viewerUrl = notebookToViewerUrl(notebookData);
+      const apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(viewerUrl);
+      try {
+        const res = await fetch(apiUrl);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = '복약수첩-QR코드.png';
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (_) {
+        window.open(apiUrl, '_blank');
+      }
+    }
+  });
+
+  document.querySelector('[data-view="notebook"]')?.addEventListener('click', () => {
+    loadNotebook();
+    setNotebookFormData();
+    renderNotebookMedList();
+  });
+}
+initNotebook();
 
 // 용어 사전
 function renderGlossaryList(query) {

@@ -9,3 +9,7 @@ const DATA_GO_KR_API_KEY = '';
 // 국립중앙의료원 전국 약국정보조회: 근처 약국 검색
 // 비워두면 DATA_GO_KR_API_KEY를 사용합니다. (같은 인증키로 활용 가능)
 const DATA_GO_KR_PHARMACY_API_KEY = '';
+
+// 의약품낱알정보식별조회: 알약 식별 및 낱알 이미지
+// 비워두면 DATA_GO_KR_API_KEY를 사용합니다.
+const DATA_GO_KR_PILL_API_KEY = '';
