@@ -496,6 +496,46 @@ function getDurWarnings(drugName, drug) {
   return warnings;
 }
 
+// 검색한 약 ↔ 내 복용약 상호작용 경고 (상호작용 탭 제거 후 검색 결과에 노출)
+function getInteractionWarningsForDrug(drugName, drug) {
+  const medNames = (typeof myMedications !== 'undefined' ? myMedications : []).map(m => getMedicationName ? getMedicationName(m) : (m.name || m));
+  if (medNames.length === 0) return [];
+  const found = [];
+  const names1 = getInteractionRelevantNames ? getInteractionRelevantNames(drugName) : [drugName];
+  const names1Norm = names1.map(n => normalizeDrugName(n));
+  for (const otherName of medNames) {
+    if (normalizeDrugName(otherName) === normalizeDrugName(drugName)) continue;
+    const names2 = getInteractionRelevantNames ? getInteractionRelevantNames(otherName) : [otherName];
+    const names2Norm = names2.map(n => normalizeDrugName(n));
+    for (const [d, interactions] of Object.entries(INTERACTION_DATABASE || {})) {
+      const match1 = namesMatchInteraction(names1, d);
+      const match2 = interactions.some(int => namesMatchInteraction(names2, int));
+      if (match1 && match2) { found.push(`${drugName} ↔ ${otherName}: 상호작용 가능`); break; }
+    }
+    if (typeof DUR_CONTRAINDICATION_PAIRS !== 'undefined') {
+      for (const pair of DUR_CONTRAINDICATION_PAIRS) {
+        if (matchDurPair(names1Norm, names2Norm, pair)) {
+          const note = pair.note ? ` (${pair.note})` : '';
+          found.push(`${drugName} ↔ ${otherName}: 병용금기${note}`);
+          break;
+        }
+      }
+    }
+    if (typeof DUR_EFFICACY_GROUPS !== 'undefined') {
+      for (const groupName of Object.keys(DUR_EFFICACY_GROUPS)) {
+        const ingredients = DUR_EFFICACY_GROUPS[groupName] || [];
+        const inGroup1 = names1Norm.some(n1 => ingredients.some(ing => normalizeDrugName(ing) === n1 || n1.includes(normalizeDrugName(ing))));
+        const inGroup2 = names2Norm.some(n2 => ingredients.some(ing => normalizeDrugName(ing) === n2 || n2.includes(normalizeDrugName(ing))));
+        if (inGroup1 && inGroup2) {
+          found.push(`${drugName} ↔ ${otherName}: 효능중복주의 (${groupName})`);
+          break;
+        }
+      }
+    }
+  }
+  return [...new Set(found)];
+}
+
 // Navigation
 navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -715,18 +755,28 @@ async function searchDrugs(query) {
 
 function renderSearchResults(results) {
   searchResults.innerHTML = results.map((item, i) => {
+    const imgPlaceholder = '<span class="drug-card-image-placeholder">&#128203;</span>';
     if (item.source === 'eyak') {
       const d = item.data;
       const name = d.itemName || '-';
       const efcy = addSpacing((d.efcyQesitm || '').substring(0, 100));
       const warnings = checkContraindications(name, d);
+      const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
+      const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
+      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       return `
-        <div class="drug-card" data-id="${i}" data-source="eyak">
-          ${warnBadge}
-          <h3>${name}</h3>
-          <p>${d.entpName || ''}</p>
-          ${efcy ? `<p class="drug-desc">${efcy}${(d.efcyQesitm || '').length > 100 ? '...' : ''}</p>` : ''}
+        <div class="drug-card" data-id="${i}" data-source="eyak" data-img-name="${(name || '').replace(/"/g, '&quot;')}" data-img-seq="${d.itemSeq || ''}">
+          <div class="drug-card-inner">
+            <div class="drug-card-image-wrap">${imgHtml}</div>
+            <div class="drug-card-body">
+              ${warnBadge}
+              <h3>${name}</h3>
+              <p>${d.entpName || ''}</p>
+              ${efcy ? `<p class="drug-desc">${efcy}${(d.efcyQesitm || '').length > 100 ? '...' : ''}</p>` : ''}
+              ${intHtml}
+            </div>
+          </div>
         </div>
       `;
     }
@@ -736,13 +786,22 @@ function renderSearchResults(results) {
       const ingredient = addSpacing((d.ingredient || '-').substring(0, 80));
       const category = d.category || '';
       const warnings = checkContraindications(name, d);
+      const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
+      const imgHtml = d.image ? `<img src="${d.image}" alt="${name}" class="drug-card-image" onerror="this.style.display='none'">` : imgPlaceholder;
+      const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       return `
-        <div class="drug-card" data-id="${i}" data-source="korean">
-          ${warnBadge}
-          <h3>${name}</h3>
-          <p>성분: ${ingredient}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
-          ${category ? `<p class="drug-category">${addSpacing(category)}</p>` : ''}
+        <div class="drug-card" data-id="${i}" data-source="korean" data-img-name="${(name || '').replace(/"/g, '&quot;')}" data-img-seq="${d.itemSeq || ''}">
+          <div class="drug-card-inner">
+            <div class="drug-card-image-wrap">${imgHtml}</div>
+            <div class="drug-card-body">
+              ${warnBadge}
+              <h3>${name}</h3>
+              <p>성분: ${ingredient}${(d.ingredient || '').length > 80 ? '...' : ''}</p>
+              ${category ? `<p class="drug-category">${addSpacing(category)}</p>` : ''}
+              ${intHtml}
+            </div>
+          </div>
         </div>
       `;
     }
@@ -751,13 +810,21 @@ function renderSearchResults(results) {
     const generic = drug.openfda?.generic_name?.[0] || '-';
     const purpose = drug.purpose?.[0]?.substring(0, 80) || drug.indications_and_usage?.[0]?.substring(0, 80) || '';
     const warnings = checkContraindications(brand || generic, drug);
+    const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(brand || generic, drug) : [];
     const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
+    const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction">${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
     return `
       <div class="drug-card" data-id="${i}" data-source="fda">
-        ${warnBadge}
-        <h3>${brand}</h3>
-        <p>성분: ${generic}</p>
-        ${purpose ? `<p>${purpose}...</p>` : ''}
+        <div class="drug-card-inner">
+          <div class="drug-card-image-wrap">${imgPlaceholder}</div>
+          <div class="drug-card-body">
+            ${warnBadge}
+            <h3>${brand}</h3>
+            <p>성분: ${generic}</p>
+            ${purpose ? `<p>${purpose}...</p>` : ''}
+            ${intHtml}
+          </div>
+        </div>
       </div>
     `;
   }).join('');
@@ -767,6 +834,32 @@ function renderSearchResults(results) {
       showDetail(item.source, item.data);
     });
   });
+  // 알약 이미지 비동기 로드 (eyak/korean)
+  loadSearchResultImages();
+}
+
+async function loadSearchResultImages() {
+  const cards = searchResults.querySelectorAll('.drug-card[data-img-name]');
+  if (!cards.length || typeof fetchEyakImageForPill !== 'function') return;
+  for (const card of cards) {
+    const name = card.dataset.imgName;
+    const seq = card.dataset.imgSeq || '';
+    if (!name) continue;
+    const wrap = card.querySelector('.drug-card-image-wrap');
+    if (!wrap || wrap.querySelector('img[src]')) continue;
+    try {
+      const imgUrl = await fetchEyakImageForPill(name, seq);
+      if (imgUrl && wrap) {
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.alt = name;
+        img.className = 'drug-card-image';
+        img.onerror = () => { img.style.display = 'none'; };
+        wrap.innerHTML = '';
+        wrap.appendChild(img);
+      }
+    } catch (_) {}
+  }
 }
 
 function addToMyMedications(name) {
@@ -1214,108 +1307,6 @@ if (document.readyState === 'loading') {
   initAutocomplete();
 }
 
-// Interaction Checker
-const interactionDrugInput = document.getElementById('interactionDrugInput');
-const addDrugBtn = document.getElementById('addDrugBtn');
-const interactionDrugList = document.getElementById('interactionDrugList');
-const checkInteractionBtn = document.getElementById('checkInteractionBtn');
-const interactionResult = document.getElementById('interactionResult');
-
-let interactionDrugs = [];
-
-addDrugBtn.addEventListener('click', () => {
-  const name = interactionDrugInput.value.trim();
-  if (name && !interactionDrugs.includes(name)) {
-    interactionDrugs.push(name);
-    renderInteractionList();
-    interactionDrugInput.value = '';
-  }
-});
-
-// 상호작용 검사 - 의약품 입력 자동완성
-function initInteractionAutocomplete() {
-  const interactionSuggestions = document.getElementById('interactionSuggestions');
-  if (!interactionSuggestions || !interactionDrugInput) return;
-  let interactionSuggestTimeout = null;
-  interactionSuggestions.classList.remove('visible');
-  interactionSuggestions.innerHTML = '';
-
-  function showInteractionSuggestions(items) {
-    if (!items.length) {
-      interactionSuggestions.classList.remove('visible');
-      interactionSuggestions.innerHTML = '';
-      return;
-    }
-    interactionSuggestions.innerHTML = items.map(d => `
-      <div class="suggestion-item" data-name="${(d.name || '').replace(/"/g, '&quot;')}">${d.name || '-'}</div>
-    `).join('');
-    interactionSuggestions.classList.add('visible');
-    interactionSuggestions.querySelectorAll('.suggestion-item').forEach(el => {
-      el.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const term = el.dataset.name;
-        if (!term) return;
-        interactionSuggestions.classList.remove('visible');
-        interactionSuggestions.innerHTML = '';
-        if (!interactionDrugs.includes(term)) {
-          interactionDrugs.push(term);
-          renderInteractionList();
-        }
-        interactionDrugInput.value = '';
-      });
-    });
-  }
-
-  interactionDrugInput.addEventListener('input', () => {
-    clearTimeout(interactionSuggestTimeout);
-    const q = interactionDrugInput.value.trim();
-    if (!q) {
-      interactionSuggestions.classList.remove('visible');
-      interactionSuggestions.innerHTML = '';
-      return;
-    }
-    interactionSuggestTimeout = setTimeout(() => showInteractionSuggestions(getDrugSuggestions(q)), 120);
-  });
-  interactionDrugInput.addEventListener('focus', () => {
-    const q = interactionDrugInput.value.trim();
-    if (q) showInteractionSuggestions(getDrugSuggestions(q));
-    else {
-      interactionSuggestions.classList.remove('visible');
-      interactionSuggestions.innerHTML = '';
-    }
-  });
-  interactionDrugInput.addEventListener('blur', () => {
-    setTimeout(() => interactionSuggestions.classList.remove('visible'), 200);
-  });
-  interactionDrugInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const name = interactionDrugInput.value.trim();
-      if (name && !interactionDrugs.includes(name)) {
-        interactionDrugs.push(name);
-        renderInteractionList();
-        interactionDrugInput.value = '';
-        interactionSuggestions.classList.remove('visible');
-      }
-    } else if (e.key === 'Escape') {
-      interactionSuggestions.classList.remove('visible');
-      interactionDrugInput.blur();
-    }
-  });
-}
-initInteractionAutocomplete();
-
-function renderInteractionList() {
-  interactionDrugList.innerHTML = interactionDrugs.map((d, i) => `
-    <span class="drug-tag">${d} <button data-i="${i}">×</button></span>
-  `).join('');
-  interactionDrugList.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      interactionDrugs.splice(parseInt(btn.dataset.i), 1);
-      renderInteractionList();
-    });
-  });
-}
-
 function normalizeDrugName(name) {
   return (name || '').toLowerCase().replace(/\s/g, '');
 }
@@ -1390,23 +1381,23 @@ function matchDurPair(names1, names2, pair) {
   return (matchAB || matchBA) && !/유효성분|연번/.test((pair.a || '') + (pair.b || ''));
 }
 
-checkInteractionBtn.addEventListener('click', () => {
-  if (interactionDrugs.length < 2) {
-    interactionResult.innerHTML = '<p class="warning">2개 이상의 약을 추가해 주세요.</p>';
-    return;
+// 상호작용 검사 (내 복용약 목록 기준) - HTML 문자열 반환
+function runInteractionCheck(drugNames) {
+  if (!drugNames || drugNames.length < 2) {
+    return '<p class="warning">2개 이상의 약을 추가해 주세요.</p>';
   }
   const found = [];
-  for (let i = 0; i < interactionDrugs.length; i++) {
-    for (let j = i + 1; j < interactionDrugs.length; j++) {
-      const names1 = getInteractionRelevantNames(interactionDrugs[i]);
-      const names2 = getInteractionRelevantNames(interactionDrugs[j]);
+  for (let i = 0; i < drugNames.length; i++) {
+    for (let j = i + 1; j < drugNames.length; j++) {
+      const names1 = getInteractionRelevantNames(drugNames[i]);
+      const names2 = getInteractionRelevantNames(drugNames[j]);
       const names1Norm = names1.map(n => normalizeDrugName(n));
       const names2Norm = names2.map(n => normalizeDrugName(n));
       for (const [drug, interactions] of Object.entries(INTERACTION_DATABASE || {})) {
         const match1 = namesMatchInteraction(names1, drug);
         const match2 = interactions.some(int => namesMatchInteraction(names2, int));
         if (match1 && match2) {
-          found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 상호작용 가능`);
+          found.push(`${drugNames[i]} ↔ ${drugNames[j]}: 상호작용 가능`);
           break;
         }
       }
@@ -1414,8 +1405,8 @@ checkInteractionBtn.addEventListener('click', () => {
         for (const pair of DUR_CONTRAINDICATION_PAIRS) {
           if (matchDurPair(names1Norm, names2Norm, pair)) {
             const note = pair.note ? ` (${pair.note})` : '';
-            found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 병용금기${note}`);
-              break;
+            found.push(`${drugNames[i]} ↔ ${drugNames[j]}: 병용금기${note}`);
+            break;
           }
         }
       }
@@ -1425,7 +1416,7 @@ checkInteractionBtn.addEventListener('click', () => {
           const inGroup1 = names1Norm.some(n1 => ingredients.some(ing => normalizeDrugName(ing) === n1 || n1.includes(normalizeDrugName(ing))));
           const inGroup2 = names2Norm.some(n2 => ingredients.some(ing => normalizeDrugName(ing) === n2 || n2.includes(normalizeDrugName(ing))));
           if (inGroup1 && inGroup2) {
-            found.push(`${interactionDrugs[i]} ↔ ${interactionDrugs[j]}: 효능중복주의 (${groupName})`);
+            found.push(`${drugNames[i]} ↔ ${drugNames[j]}: 효능중복주의 (${groupName})`);
             break;
           }
         }
@@ -1433,11 +1424,10 @@ checkInteractionBtn.addEventListener('click', () => {
     }
   }
   if (found.length > 0) {
-    interactionResult.innerHTML = '<p class="danger"><strong>⚠️ 상호작용 주의:</strong></p>' + [...new Set(found)].map(f => `<p>• ${f}</p>`).join('');
-  } else {
-    interactionResult.innerHTML = '<p class="success">등록된 데이터에서 알려진 상호작용이 없습니다. 전문가 상담을 권장합니다.</p>';
+    return '<p class="danger"><strong>⚠️ 상호작용 주의:</strong></p>' + [...new Set(found)].map(f => `<p>• ${f}</p>`).join('');
   }
-});
+  return '<p class="success">등록된 데이터에서 알려진 상호작용이 없습니다. 전문가 상담을 권장합니다.</p>';
+}
 
 // Pill Identifier
 const pillShape = document.getElementById('pillShape');
@@ -1716,10 +1706,11 @@ function initMedicationAutocomplete() {
 initMedicationAutocomplete();
 
 checkMyInteractionsBtn.addEventListener('click', () => {
-  interactionDrugs = myMedications.map(m => getMedicationName(m));
-  renderInteractionList();
-  document.querySelector('[data-view="interaction"]').click();
-  setTimeout(() => checkInteractionBtn.click(), 100);
+  const resultEl = document.getElementById('medicationInteractionResult');
+  if (!resultEl) return;
+  const drugNames = myMedications.map(m => getMedicationName(m));
+  resultEl.innerHTML = runInteractionCheck(drugNames);
+  resultEl.classList.remove('hidden');
 });
 
 checkAllergyBtn.addEventListener('click', () => {

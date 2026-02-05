@@ -23,7 +23,6 @@
       <nav class="nav">
         <button class="nav-btn active" data-view="profile">건강정보</button>
         <button class="nav-btn" data-view="search">검색</button>
-        <button class="nav-btn" data-view="interaction">상호작용</button>
         <button class="nav-btn" data-view="pill">알약 식별</button>
         <button class="nav-btn" data-view="medications">내 복용약</button>
         <button class="nav-btn" data-view="notebook">복약수첩</button>
@@ -103,10 +102,10 @@
               <path class="body-outline" d="M52 172 L44 172 L40 192 L44 198 L56 198 L58 192 L54 172 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
               <!-- 다리 오른쪽 -->
               <path class="body-outline" d="M68 172 L76 172 L80 192 L76 198 L64 198 L62 192 L66 172 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
-              <!-- 클릭 영역 (data-part: 부위명) -->
+              <!-- 클릭 영역 (data-part: 부위명) - 가슴/위장 분리 -->
               <ellipse class="body-part" data-part="머리" cx="60" cy="20" rx="16" ry="18"/>
-              <ellipse class="body-part" data-part="가슴" cx="60" cy="78" rx="26" ry="28"/>
-              <ellipse class="body-part" data-part="위장" cx="60" cy="130" rx="22" ry="35"/>
+              <ellipse class="body-part" data-part="가슴" cx="60" cy="68" rx="24" ry="20"/>
+              <ellipse class="body-part" data-part="위장" cx="60" cy="118" rx="22" ry="28"/>
               <ellipse class="body-part" data-part="관절" cx="60" cy="165" rx="20" ry="12"/>
               <ellipse class="body-part" data-part="팔" cx="18" cy="85" rx="10" ry="24"/>
               <ellipse class="body-part" data-part="팔" cx="102" cy="85" rx="10" ry="24"/>
@@ -134,22 +133,6 @@
       <section class="view view-detail hidden" id="viewDetail">
         <button class="back-btn" id="backBtn">← 목록으로</button>
         <div class="detail-content" id="detailContent"></div>
-      </section>
-
-      <!-- 상호작용 검사 뷰 -->
-      <section class="view view-interaction hidden" id="viewInteraction">
-        <h2>약물 상호작용 검사</h2>
-        <p class="subtitle">복용 중인 약을 추가하고 상호작용을 확인하세요</p>
-        <div class="interaction-input-wrapper" style="position:relative;">
-          <div class="interaction-input">
-            <input type="text" id="interactionDrugInput" placeholder="의약품명 입력" autocomplete="off">
-            <button class="btn btn-primary" id="addDrugBtn">추가</button>
-          </div>
-          <div class="interaction-suggestions" id="interactionSuggestions"></div>
-        </div>
-        <div class="drug-list" id="interactionDrugList"></div>
-        <button class="btn btn-secondary" id="checkInteractionBtn">상호작용 검사</button>
-        <div class="interaction-result" id="interactionResult"></div>
       </section>
 
       <!-- 알약 식별 뷰 -->
@@ -227,6 +210,7 @@
           <button class="btn btn-secondary" id="checkAllergyBtn">알레르기 검사</button>
           <button class="btn btn-secondary" id="checkMyInteractionsBtn">상호작용 검사</button>
         </div>
+        <div class="medication-interaction-result" id="medicationInteractionResult"></div>
       </section>
 
       <!-- 복약수첩 뷰 -->
@@ -397,7 +381,7 @@
   <script>if(typeof PHARMACY_DATA==='undefined'){var PHARMACY_DATA=[];}</script>
   <script src="korean-drugs.js"></script>
   <script>if(typeof KOREAN_DRUG_DATABASE==='undefined'){var KOREAN_DRUG_DATABASE=[];}</script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
   <script>
     if (typeof KOREAN_TO_ENGLISH === 'undefined') {
       document.body.innerHTML = '<p style="padding:2rem;color:red;">data.js를 불러올 수 없습니다. index.html과 같은 폴더에 data.js, app.js, styles.css가 있는지 확인하세요.</p>';

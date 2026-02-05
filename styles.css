@@ -418,6 +418,30 @@ body {
   cursor: pointer;
   transition: all 0.2s;
 }
+.drug-card-inner { display: flex; gap: 1rem; align-items: flex-start; }
+.drug-card-image-wrap {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.drug-card-image { max-width: 72px; max-height: 72px; object-fit: contain; }
+.drug-card-image-placeholder { font-size: 2rem; opacity: 0.4; }
+.drug-card-body { flex: 1; min-width: 0; position: relative; }
+.drug-card-interaction {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #FFF8E6;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--warning);
+}
+.drug-card-interaction p { margin: 0.2rem 0; }
 
 .drug-card:hover {
   border-color: var(--primary);
@@ -436,8 +460,8 @@ body {
 .drug-card { position: relative; }
 .drug-card-warning {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: 0.5rem;
+  right: 0.5rem;
   font-size: 0.75rem;
   color: var(--warning);
   background: #FFF8E6;
@@ -610,7 +634,7 @@ body {
   background: var(--bg);
 }
 
-.pill-form, .interaction-result {
+.pill-form, .interaction-result, .medication-interaction-result {
   background: var(--card);
   padding: 1.5rem;
   border-radius: var(--radius);
@@ -653,6 +677,7 @@ body {
 .interaction-result .success { color: var(--success); }
 
 .medication-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.medication-interaction-result { margin-top: 1rem; }
 
 /* 건강정보 프로필 */
 .profile-form {
