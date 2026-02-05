@@ -76,6 +76,7 @@
         </div>
         <div class="body-diagram-section">
           <p class="body-diagram-label">증상 부위를 선택하세요</p>
+          <p class="body-part-hint" id="bodyPartHint">부위에 마우스를 올려보세요</p>
           <div class="body-diagram">
             <svg viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg" class="body-svg">
               <defs>
@@ -89,14 +90,14 @@
               </defs>
               <!-- 몸통 실루엣 (머리~다리) -->
               <path class="body-outline" d="M60 12 a12 14 0 0 1 0 28 a12 14 0 0 1 0 -28 M48 40 Q30 42 28 70 L28 95 Q28 115 35 130 L35 165 Q35 185 60 188 Q85 185 85 165 L85 130 Q92 115 92 95 L92 70 Q90 42 72 40 Z" fill="url(#bodyGrad)" stroke="#B8D4F0" stroke-width="1.5" filter="url(#bodyShadow)"/>
-              <!-- 클릭 영역 -->
-              <ellipse class="body-part" data-term="두통" cx="60" cy="25" rx="14" ry="16"/>
-              <ellipse class="body-part" data-term="기침" cx="60" cy="55" rx="18" ry="18"/>
-              <ellipse class="body-part" data-term="소화불량" cx="60" cy="88" rx="16" ry="20"/>
-              <ellipse class="body-part" data-term="관절통" cx="60" cy="118" rx="14" ry="12"/>
-              <ellipse class="body-part" data-term="근육통" cx="32" cy="70" rx="12" ry="25"/>
-              <ellipse class="body-part" data-term="근육통" cx="88" cy="70" rx="12" ry="25"/>
-              <path class="body-part" data-term="신경통" d="M45 135 L75 135 L78 175 Q78 185 60 188 Q42 185 42 175 Z" fill="transparent"/>
+              <!-- 클릭 영역 (data-label: 부위명, data-term: 검색어) -->
+              <ellipse class="body-part" data-label="머리" data-term="두통" cx="60" cy="25" rx="14" ry="16"/>
+              <ellipse class="body-part" data-label="가슴" data-term="기침" cx="60" cy="55" rx="18" ry="18"/>
+              <ellipse class="body-part" data-label="위장" data-term="소화불량" cx="60" cy="88" rx="16" ry="20"/>
+              <ellipse class="body-part" data-label="관절" data-term="관절통" cx="60" cy="118" rx="14" ry="12"/>
+              <ellipse class="body-part" data-label="팔" data-term="근육통" cx="32" cy="70" rx="12" ry="25"/>
+              <ellipse class="body-part" data-label="팔" data-term="근육통" cx="88" cy="70" rx="12" ry="25"/>
+              <path class="body-part" data-label="다리" data-term="신경통" d="M45 135 L75 135 L78 175 Q78 185 60 188 Q42 185 42 175 Z" fill="transparent"/>
             </svg>
           </div>
           <div class="body-part-buttons">

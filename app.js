@@ -459,7 +459,15 @@ function getRelevanceScore(d, query) {
   if (nameEn.startsWith(q) || nameEn.includes(q)) return 40;
   if (ingredient.includes(q)) return 30;
   if (company.includes(q) || category.includes(q)) return 20;
-  if (efcy.includes(q)) return 15;
+  if (efcy.includes(q)) {
+    // 감기 검색: 감기약(효능 앞부분에 감기 강조) 우선
+    if (q === '감기') {
+      const efcyStart = efcy.substring(0, 100);
+      if (efcyStart.includes('감기의') || efcyStart.includes('감기로') || efcyStart.includes('코감기')) return 55;
+      if (category.includes('감기')) return 50;
+    }
+    return 15;
+  }
   return 10;
 }
 
@@ -866,6 +874,13 @@ searchBtn.addEventListener('click', () => {
 
 // 몸 부위별 증상 검색 (버튼 + SVG 영역)
 function initBodyPartSearch() {
+  const hintEl = document.getElementById('bodyPartHint');
+  const showHint = (label, term) => {
+    if (hintEl) {
+      hintEl.textContent = label ? `${label} → ${term} 검색` : '부위에 마우스를 올려보세요';
+      hintEl.classList.toggle('active', !!label);
+    }
+  };
   const runSearch = (term) => {
     if (!term) return;
     searchInput.value = term;
@@ -874,10 +889,15 @@ function initBodyPartSearch() {
   };
   document.querySelectorAll('.body-part-btn').forEach(btn => {
     btn.addEventListener('click', () => runSearch(btn.dataset.term));
+    btn.addEventListener('mouseenter', () => showHint(btn.textContent.trim(), btn.dataset.term || ''));
+    btn.addEventListener('mouseleave', () => showHint('', ''));
   });
   document.querySelectorAll('.body-part').forEach(el => {
     el.addEventListener('click', () => runSearch(el.dataset.term));
+    el.addEventListener('mouseenter', () => showHint(el.dataset.label || '', el.dataset.term || ''));
+    el.addEventListener('mouseleave', () => showHint('', ''));
   });
+  document.querySelector('.body-diagram')?.addEventListener('mouseleave', () => showHint('', ''));
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initBodyPartSearch);
