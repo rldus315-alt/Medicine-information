@@ -1,6 +1,6 @@
 // 사이트 진입 시 기존 저장 데이터 초기화 (새로 선택 가능하도록)
 (function clearStoredData() {
-  ['medicine_user_profile', 'medicine_recent_searches', 'myMedications'].forEach(k => {
+  ['medicine_user_profile', 'medicine_recent_searches', 'myMedications', 'medicine_notebook'].forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
 })();
