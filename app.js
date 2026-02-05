@@ -400,26 +400,32 @@ async function fetchEyakImageForPill(itemName, itemSeq) {
     }
     return null;
   };
+  function firstItemWithImage(items) {
+    if (!items || !Array.isArray(items)) return '';
+    for (const it of items) {
+      const img = (it.itemImage || it.ITEM_IMAGE || '').trim();
+      if (img && img !== 'null') return ensureHttpsImageUrl(img);
+    }
+    return '';
+  }
   if (apiKey) {
     if (itemSeq) {
       const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
       const items = await fetchWithProxy(url);
-      const img = (items && items[0]) ? (items[0].itemImage || items[0].ITEM_IMAGE || '').trim() : '';
-      if (img) return ensureHttpsImageUrl(img);
+      const img = firstItemWithImage(items);
+      if (img) return img;
     }
     if (itemName) {
       const items = await fetchEyakApi(itemName);
-      const img = (items && items[0]) ? (items[0].itemImage || items[0].ITEM_IMAGE || '').trim() : '';
-      if (img) return ensureHttpsImageUrl(img);
+      const img = firstItemWithImage(items);
+      if (img) return img;
     }
   }
   if (pillKey && itemName) {
     try {
       const pillItems = await fetchPillApi({ itemName });
-      if (pillItems && pillItems[0]) {
-        const img = (pillItems[0].itemImage || pillItems[0].ITEM_IMAGE || '').trim();
-        if (img) return ensureHttpsImageUrl(img);
-      }
+      const img = firstItemWithImage(pillItems);
+      if (img) return img;
     } catch (_) {}
   }
   return '';
@@ -756,13 +762,13 @@ async function searchDrugs(query) {
     try {
       const eyakItems = await fetchEyakApi(q);
       if (eyakItems && eyakItems.length > 0) {
-        const scored = eyakItems.map(d => ({
-          source: 'eyak',
-          data: d,
-          score: (d.itemName || '').toLowerCase() === q.toLowerCase() ? 100 :
+        const scored = eyakItems.map(d => {
+          const nameScore = (d.itemName || '').toLowerCase() === q.toLowerCase() ? 100 :
             (d.itemName || '').toLowerCase().startsWith(q.toLowerCase()) ? 80 :
-            (d.itemName || '').toLowerCase().includes(q.toLowerCase()) ? 60 : 40
-        }));
+            (d.itemName || '').toLowerCase().includes(q.toLowerCase()) ? 60 : 40;
+          const hasImg = !!(d.itemImage || d.ITEM_IMAGE || '').trim();
+          return { source: 'eyak', data: d, score: nameScore + (hasImg ? 10 : 0) };
+        });
         scored.sort((a, b) => b.score - a.score);
         let eyakResults = scored.map(x => ({ source: x.source, data: x.data }));
         eyakResults = prependPriorityPillMatches(eyakResults, q);
