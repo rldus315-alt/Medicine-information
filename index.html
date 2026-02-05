@@ -88,33 +88,29 @@
                   <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.08"/>
                 </filter>
               </defs>
+              <!-- 인체 실루엣 (자연스러운 비율·참고 이미지 기반) -->
               <!-- 머리 -->
-              <ellipse class="body-outline" cx="60" cy="20" rx="16" ry="18" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1" filter="url(#bodyShadow)"/>
+              <ellipse class="body-outline" cx="60" cy="18" rx="13" ry="15" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1" filter="url(#bodyShadow)"/>
               <!-- 목 -->
-              <rect class="body-outline" x="52" y="38" width="16" height="10" rx="2" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 가슴 (상부 흉부) -->
-              <path class="body-outline body-chest" d="M52 48 L30 50 L25 60 L25 95 L95 95 L95 60 L90 50 L68 48 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 위장 (하부 복부) -->
-              <path class="body-outline body-stomach" d="M25 95 L25 115 L38 168 L52 172 L68 172 L82 168 L95 115 L95 95 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 가슴-위장 경계선 -->
-              <line x1="25" y1="95" x2="95" y2="95" stroke="#B89A6F" stroke-width="0.5"/>
-              <!-- 팔 왼쪽 -->
-              <ellipse class="body-outline" cx="18" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <path class="body-outline" d="M54 33 L50 42 L48 48 L72 48 L70 42 L66 33 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 가슴: 어깨 넓음 → 허리로 좁아짐 -->
+              <path class="body-outline body-chest" d="M48 48 Q44 50 40 55 L32 58 Q26 65 26 78 L26 98 L94 98 L94 78 Q94 65 88 58 L80 55 Q76 50 72 48 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 위장: 허리 → 골반 → 다리 -->
+              <path class="body-outline body-stomach" d="M26 98 Q24 108 26 120 L28 140 Q32 160 40 176 L48 186 L56 192 L60 194 L64 192 L72 186 L80 176 L88 160 L92 140 L94 120 Q96 108 94 98 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <path d="M26 98 Q30 100 60 100 Q90 100 94 98" stroke="#B89A6F" stroke-width="0.5" fill="none"/>
+              <!-- 팔 왼쪽: 몸통에서 살짝 벌어진 형태 -->
+              <path class="body-outline" d="M32 58 Q22 62 16 80 Q12 95 18 108 Q22 116 28 110 L26 88 Q24 70 30 60 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 팔 오른쪽 -->
-              <ellipse class="body-outline" cx="102" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 다리 왼쪽 -->
-              <path class="body-outline" d="M52 172 L44 172 L40 192 L44 198 L56 198 L58 192 L54 172 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 다리 오른쪽 -->
-              <path class="body-outline" d="M68 172 L76 172 L80 192 L76 198 L64 198 L62 192 L66 172 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
-              <!-- 클릭 영역 (data-part: 부위명) - 가슴/위장 분리 -->
-              <ellipse class="body-part" data-part="머리" cx="60" cy="20" rx="16" ry="18"/>
-              <ellipse class="body-part" data-part="가슴" cx="60" cy="68" rx="24" ry="20"/>
-              <ellipse class="body-part" data-part="위장" cx="60" cy="118" rx="22" ry="28"/>
-              <ellipse class="body-part" data-part="관절" cx="60" cy="165" rx="20" ry="12"/>
-              <ellipse class="body-part" data-part="팔" cx="18" cy="85" rx="10" ry="24"/>
-              <ellipse class="body-part" data-part="팔" cx="102" cy="85" rx="10" ry="24"/>
-              <ellipse class="body-part" data-part="다리" cx="49" cy="188" rx="10" ry="14"/>
-              <ellipse class="body-part" data-part="다리" cx="71" cy="188" rx="10" ry="14"/>
+              <path class="body-outline" d="M88 58 Q98 62 104 80 Q108 95 102 108 Q98 116 92 110 L94 88 Q96 70 90 60 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
+              <!-- 클릭 영역 (data-part: 부위명) -->
+              <ellipse class="body-part" data-part="머리" cx="60" cy="18" rx="14" ry="16"/>
+              <ellipse class="body-part" data-part="가슴" cx="60" cy="72" rx="30" ry="22"/>
+              <ellipse class="body-part" data-part="위장" cx="60" cy="130" rx="28" ry="35"/>
+              <ellipse class="body-part" data-part="관절" cx="60" cy="168" rx="22" ry="12"/>
+              <ellipse class="body-part" data-part="팔" cx="20" cy="85" rx="14" ry="28"/>
+              <ellipse class="body-part" data-part="팔" cx="100" cy="85" rx="14" ry="28"/>
+              <ellipse class="body-part" data-part="다리" cx="48" cy="188" rx="12" ry="14"/>
+              <ellipse class="body-part" data-part="다리" cx="72" cy="188" rx="12" ry="14"/>
             </svg>
           </div>
           <div class="body-part-buttons">
