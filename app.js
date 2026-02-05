@@ -275,16 +275,51 @@ function printMedicationGuide() {
 
 // OpenFDA API Base
 const FDA_API = 'https://api.fda.gov/drug/label.json';
-// e약은요 API (공공데이터포털)
-const EYAK_API = 'http://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
+// e약은요 API (공공데이터포털) - HTTPS 사용 (mixed content 방지)
+const EYAK_API = 'https://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList';
 // 의약품낱알정보식별조회 API (공공데이터포털)
-const PILL_API = 'http://apis.data.go.kr/1471000/DrbPilDrugInfoService/getDrbPilDrugInfo';
+const PILL_API = 'https://apis.data.go.kr/1471000/DrbPilDrugInfoService/getDrbPilDrugInfo';
 // 국립중앙의료원 전국 약국 정보 조회 API
 const PHARMACY_API = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire';
 const CORS_PROXIES = [
   (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
   (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u)
 ];
+
+// HTTP 이미지 URL → HTTPS 변환 (mixed content 방지)
+function ensureHttpsImageUrl(url) {
+  if (!url || typeof url !== 'string') return url || '';
+  const u = url.trim();
+  if (u.startsWith('http://')) return 'https://' + u.slice(7);
+  return u;
+}
+
+// 이미지 로드 실패 시 CORS 프록시로 재시도
+async function tryImageProxyFallback(img, imgUrl, wrap, alt, className) {
+  const placeholder = (className === 'drug-card-image' || className === 'pill-image')
+    ? '<span class="' + (className === 'pill-image' ? 'pill-image-placeholder' : 'drug-card-image-placeholder') + '">&#128203;</span>'
+    : '';
+  const setFailed = () => {
+    if (wrap) wrap.innerHTML = placeholder;
+    else img.style.display = 'none';
+  };
+  const targetUrl = ensureHttpsImageUrl(imgUrl);
+  for (const toProxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = toProxy(targetUrl);
+      const res = await fetch(proxyUrl);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      if (!blob.type.startsWith('image/')) continue;
+      const blobUrl = URL.createObjectURL(blob);
+      img.onerror = null;
+      img.src = blobUrl;
+      img.alt = alt || '';
+      return;
+    } catch (_) { continue; }
+  }
+  setFailed();
+}
 
 // e약은요 API 호출 (API 키 필요)
 async function fetchEyakApi(itemName) {
@@ -344,7 +379,7 @@ async function fetchPillApi(params) {
   }
 }
 
-// e약은요 API + 낱알 API로 품목명/itemSeq→itemImage 조회
+// e약은요 API + 낱알 API로 품목명/itemSeq→itemImage 조회 (CORS 프록시 지원)
 async function fetchEyakImageForPill(itemName, itemSeq) {
   const apiKey = (typeof DATA_GO_KR_API_KEY !== 'undefined' && DATA_GO_KR_API_KEY) ? DATA_GO_KR_API_KEY.trim() : '';
   const pillKey = (typeof DATA_GO_KR_PILL_API_KEY !== 'undefined' && DATA_GO_KR_PILL_API_KEY) ? DATA_GO_KR_PILL_API_KEY.trim() : apiKey;
@@ -357,17 +392,22 @@ async function fetchEyakImageForPill(itemName, itemSeq) {
     if (!items) return null;
     return Array.isArray(items) ? items : [items];
   };
+  const fetchWithProxy = async (url) => {
+    try { return await tryFetch(url); } catch (_) {}
+    for (const toProxy of CORS_PROXIES) {
+      try { return await tryFetch(toProxy(url)); } catch (_) { continue; }
+    }
+    return null;
+  };
   if (apiKey) {
     if (itemSeq) {
       const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
-      try {
-        const items = await tryFetch(url);
-        if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
-      } catch (_) {}
+      const items = await fetchWithProxy(url);
+      if (items && items[0]?.itemImage) return ensureHttpsImageUrl((items[0].itemImage || '').trim());
     }
     if (itemName) {
       const items = await fetchEyakApi(itemName);
-      if (items && items[0]?.itemImage) return (items[0].itemImage || '').trim();
+      if (items && items[0]?.itemImage) return ensureHttpsImageUrl((items[0].itemImage || '').trim());
     }
   }
   if (pillKey && itemName) {
@@ -375,7 +415,7 @@ async function fetchEyakImageForPill(itemName, itemSeq) {
       const pillItems = await fetchPillApi({ itemName });
       if (pillItems && pillItems[0]) {
         const img = (pillItems[0].itemImage || pillItems[0].ITEM_IMAGE || '').trim();
-        if (img) return img;
+        if (img) return ensureHttpsImageUrl(img);
       }
     } catch (_) {}
   }
@@ -813,7 +853,7 @@ function renderSearchResults(results) {
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const intrcText = getDrugInteractionInfo('eyak', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
-      const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${name}" class="drug-card-image" onerror="this.classList.add('img-failed');this.style.display='none'">` : imgPlaceholder;
+      const imgHtml = d.itemImage ? `<img src="${ensureHttpsImageUrl(d.itemImage)}" alt="${name}" class="drug-card-image" referrerpolicy="no-referrer" onerror="typeof tryImageProxyFallback==='function'&&tryImageProxyFallback(this,this.src,this.closest('.drug-card-image-wrap'),this.alt,'drug-card-image')">` : imgPlaceholder;
       const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
@@ -841,7 +881,7 @@ function renderSearchResults(results) {
       const intWarnings = typeof getInteractionWarningsForDrug === 'function' ? getInteractionWarningsForDrug(name, d) : [];
       const intrcText = getDrugInteractionInfo('korean', d);
       const warnBadge = warnings.length > 0 ? '<span class="drug-card-warning">⚠️ 주의</span>' : '';
-      const imgHtml = d.image ? `<img src="${d.image}" alt="${name}" class="drug-card-image" onerror="this.classList.add('img-failed');this.style.display='none'">` : imgPlaceholder;
+      const imgHtml = d.image ? `<img src="${ensureHttpsImageUrl(d.image)}" alt="${name}" class="drug-card-image" referrerpolicy="no-referrer" onerror="typeof tryImageProxyFallback==='function'&&tryImageProxyFallback(this,this.src,this.closest('.drug-card-image-wrap'),this.alt,'drug-card-image')">` : imgPlaceholder;
       const intHtml = intWarnings.length > 0 ? `<div class="drug-card-interaction"><strong>내 복용약과:</strong>${intWarnings.map(w => `<p>⚠️ ${w}</p>`).join('')}</div>` : '';
       const intrcHtml = intrcText ? `<div class="drug-card-intrc"><strong>약물·음식 상호작용:</strong><p>${addSpacing(intrcText.substring(0, 180))}${intrcText.length > 180 ? '...' : ''}</p></div>` : '';
       return `
@@ -913,10 +953,11 @@ async function loadSearchResultImages() {
       wrap.innerHTML = '';
       if (imgUrl) {
         const img = document.createElement('img');
-        img.src = imgUrl;
+        img.src = ensureHttpsImageUrl(imgUrl);
         img.alt = name;
         img.className = 'drug-card-image';
-        img.onerror = () => { img.style.display = 'none'; };
+        img.referrerPolicy = 'no-referrer';
+        img.onerror = () => { tryImageProxyFallback(img, imgUrl, wrap, name, 'drug-card-image'); };
         wrap.appendChild(img);
       } else {
         wrap.innerHTML = '<span class="drug-card-image-placeholder">&#128203;</span>';
@@ -945,10 +986,11 @@ async function loadDetailImage() {
     const imgUrl = await fetchEyakImageForPill(name, seq);
     if (imgUrl) {
       const img = document.createElement('img');
-      img.src = imgUrl;
+      img.src = ensureHttpsImageUrl(imgUrl);
       img.alt = name;
       img.className = 'drug-image';
-      img.onerror = () => { img.style.display = 'none'; };
+      img.referrerPolicy = 'no-referrer';
+      img.onerror = () => { tryImageProxyFallback(img, imgUrl, null, name, 'drug-image'); };
       wrap.replaceWith(img);
     }
   } catch (_) {}
@@ -966,7 +1008,7 @@ function showDetail(source, drug) {
 
   if (source === 'eyak') {
     const d = drug;
-    const imgHtml = d.itemImage ? `<img src="${d.itemImage}" alt="${d.itemName}" class="drug-image" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.itemName || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
+    const imgHtml = d.itemImage ? `<img src="${ensureHttpsImageUrl(d.itemImage)}" alt="${d.itemName}" class="drug-image" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.itemName || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     const sections = [
       { title: '효능·효과', data: d.efcyQesitm },
       { title: '사용법', data: d.useMethodQesitm },
@@ -998,7 +1040,7 @@ function showDetail(source, drug) {
     loadDetailImage();
   } else if (source === 'korean') {
     const d = drug;
-    const imgHtml = d.image ? `<img src="${d.image}" alt="${d.name}" class="drug-image" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.name || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
+    const imgHtml = d.image ? `<img src="${ensureHttpsImageUrl(d.image)}" alt="${d.name}" class="drug-image" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.name || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     let ext = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm ? d : null;
     if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
       const extInfo = DRUG_EXTENDED_INFO[d.name] || DRUG_EXTENDED_INFO[d.ingredient];
@@ -1582,7 +1624,7 @@ identifyPillBtn.addEventListener('click', async () => {
   }
 
   pillResults.innerHTML = matches.map(p => {
-    const imgPlaceholder = p.itemImage ? `<img src="${p.itemImage}" alt="${(p.name || '').replace(/"/g, '&quot;')}" class="pill-image" onerror="this.style.display='none'">` : '<span class="pill-image-placeholder">&#128203;</span>';
+    const imgPlaceholder = p.itemImage ? `<img src="${ensureHttpsImageUrl(p.itemImage)}" alt="${(p.name || '').replace(/"/g, '&quot;')}" class="pill-image" referrerpolicy="no-referrer" onerror="typeof tryImageProxyFallback==='function'&&tryImageProxyFallback(this,this.src,this.parentElement,this.alt,'pill-image')">` : '<span class="pill-image-placeholder">&#128203;</span>';
     return `<div class="drug-card pill-card" data-pill-name="${(p.name || '').replace(/"/g, '&quot;')}">
       <div class="pill-card-image">${imgPlaceholder}</div>
       <h3>${(p.name || '-').replace(/</g, '&lt;')}</h3>
@@ -1601,7 +1643,16 @@ identifyPillBtn.addEventListener('click', async () => {
         const card = Array.from(cards).find(c => (c.dataset.pillName || '') === (p.name || ''));
         if (card) {
           const imgWrap = card.querySelector('.pill-card-image');
-          if (imgWrap) imgWrap.innerHTML = `<img src="${imgUrl}" alt="${(p.name || '').replace(/"/g, '&quot;')}" class="pill-image" onerror="this.style.display='none'">`;
+          if (imgWrap) {
+            const img = document.createElement('img');
+            img.src = ensureHttpsImageUrl(imgUrl);
+            img.alt = (p.name || '').replace(/"/g, '&quot;');
+            img.className = 'pill-image';
+            img.referrerPolicy = 'no-referrer';
+            img.onerror = () => { tryImageProxyFallback(img, imgUrl, imgWrap, p.name, 'pill-image'); };
+            imgWrap.innerHTML = '';
+            imgWrap.appendChild(img);
+          }
         }
       }
     }
