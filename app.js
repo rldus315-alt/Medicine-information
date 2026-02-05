@@ -2174,18 +2174,33 @@ initGlossary();
 // ========== 근처 약국 & 약국 정보 ==========
 const DAY_LABELS = { 1: '월', 2: '화', 3: '수', 4: '목', 5: '금', 6: '토', 7: '일', 8: '공휴일' };
 
+function formatTime(val) {
+  if (!val || (val + '').trim() === '') return null;
+  const s = (val + '').trim().replace(/^(\d{2})(\d{2})$/, '$1:$2');
+  return s || null;
+}
+
 function formatAllPharmacyHours(item) {
-  const parts = [];
+  const daySlots = [];
   for (let d = 1; d <= 8; d++) {
     const s = item[`dutyTime${d}s`] || item[`dutyTime${d}S`] || item[`dutytime${d}s`];
     const c = item[`dutyTime${d}c`] || item[`dutyTime${d}C`] || item[`dutytime${d}c`];
-    if (s || c) {
-      const start = (s || '').replace(/^(\d{2})(\d{2})$/, '$1:$2') || '-';
-      const end = (c || '').replace(/^(\d{2})(\d{2})$/, '$1:$2') || '-';
-      parts.push(`${DAY_LABELS[d]}: ${start}~${end}`);
-    }
+    const start = formatTime(s);
+    const end = formatTime(c);
+    const slot = (start && end) ? `${start}~${end}` : ((!start && !end) ? '휴무' : `${start || '-'}~${end || '-'}`);
+    daySlots.push({ day: d, label: DAY_LABELS[d], slot });
   }
-  return parts.length ? parts.join(' | ') : '영업시간 정보 없음';
+  const groups = [];
+  let i = 0;
+  while (i < daySlots.length) {
+    const curr = daySlots[i].slot;
+    let j = i + 1;
+    while (j < daySlots.length && daySlots[j].slot === curr) j++;
+    const dayRange = (j - i === 1) ? daySlots[i].label : `${daySlots[i].label}~${daySlots[j - 1].label}`;
+    groups.push(`${dayRange}: ${curr}`);
+    i = j;
+  }
+  return groups.length ? groups.join(' · ') : '영업시간 정보 없음';
 }
 
 async function fetchPharmacyList(params) {
@@ -2295,11 +2310,21 @@ function initPharmacy() {
       { k: 'mon', l: '월' }, { k: 'tue', l: '화' }, { k: 'wed', l: '수' }, { k: 'thu', l: '목' },
       { k: 'fri', l: '금' }, { k: 'sat', l: '토' }, { k: 'sun', l: '일' }, { k: 'holiday', l: '공휴일' }
     ];
-    const parts = days.map(d => {
+    const daySlots = days.map(d => {
       const v = (p[d.k] || '').trim();
-      return v ? `${d.l}: ${v}` : null;
-    }).filter(Boolean);
-    return parts.length ? parts.join(' | ') : '영업시간 정보 없음';
+      return { day: d.l, slot: v || '휴무' };
+    });
+    const groups = [];
+    let i = 0;
+    while (i < daySlots.length) {
+      const curr = daySlots[i].slot;
+      let j = i + 1;
+      while (j < daySlots.length && daySlots[j].slot === curr) j++;
+      const dayRange = (j - i === 1) ? daySlots[i].day : `${daySlots[i].day}~${daySlots[j - 1].day}`;
+      groups.push(`${dayRange}: ${curr}`);
+      i = j;
+    }
+    return groups.length ? groups.join(' · ') : '영업시간 정보 없음';
   }
 
   function matchPharmacyName(name, query) {

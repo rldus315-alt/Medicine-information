@@ -823,7 +823,7 @@ body {
 }
 .pharmacy-tel a { color: var(--primary); text-decoration: none; }
 .pharmacy-tel a:hover { text-decoration: underline; }
-.pharmacy-hours { font-size: 0.85rem; color: var(--text-muted); }
+.pharmacy-hours { font-size: 0.85rem; color: var(--text-muted); word-break: keep-all; }
 .pharmacy-hours strong { color: var(--text); font-weight: 600; }
 .pharmacy-map-wrap { margin: 0.75rem 0; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
 .pharmacy-map-embed { width: 100%; height: 160px; border: none; display: block; }
