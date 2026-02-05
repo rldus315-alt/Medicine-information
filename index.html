@@ -81,31 +81,31 @@
             <svg viewBox="0 0 120 200" xmlns="http://www.w3.org/2000/svg" class="body-svg">
               <defs>
                 <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" style="stop-color:#E8F3FF"/>
-                  <stop offset="100%" style="stop-color:#C8E0F8"/>
+                  <stop offset="0%" style="stop-color:#F5E6D3"/>
+                  <stop offset="100%" style="stop-color:#E8D5C4"/>
                 </linearGradient>
                 <filter id="bodyShadow" x="-15%" y="-10%" width="130%" height="120%">
-                  <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.12"/>
+                  <feDropShadow dx="0" dy="1" stdDeviation="1" flood-opacity="0.08"/>
                 </filter>
               </defs>
               <!-- 머리 -->
-              <ellipse class="body-outline" cx="60" cy="20" rx="16" ry="18" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2" filter="url(#bodyShadow)"/>
+              <ellipse class="body-outline" cx="60" cy="20" rx="16" ry="18" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1" filter="url(#bodyShadow)"/>
               <!-- 목 -->
-              <rect class="body-outline" x="52" y="38" width="16" height="10" rx="2" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
+              <rect class="body-outline" x="52" y="38" width="16" height="10" rx="2" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 가슴 (상부 흉부) -->
-              <path class="body-outline body-chest" d="M52 48 L30 50 L25 60 L25 95 L95 95 L95 60 L90 50 L68 48 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2"/>
+              <path class="body-outline body-chest" d="M52 48 L30 50 L25 60 L25 95 L95 95 L95 60 L90 50 L68 48 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 위장 (하부 복부) -->
-              <path class="body-outline body-stomach" d="M25 95 L25 115 L38 168 L52 172 L68 172 L82 168 L95 115 L95 95 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1.2"/>
+              <path class="body-outline body-stomach" d="M25 95 L25 115 L38 168 L52 172 L68 172 L82 168 L95 115 L95 95 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 가슴-위장 경계선 -->
-              <line x1="25" y1="95" x2="95" y2="95" stroke="#9BC4ED" stroke-width="0.6"/>
+              <line x1="25" y1="95" x2="95" y2="95" stroke="#B89A6F" stroke-width="0.5"/>
               <!-- 팔 왼쪽 -->
-              <ellipse class="body-outline" cx="18" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
+              <ellipse class="body-outline" cx="18" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 팔 오른쪽 -->
-              <ellipse class="body-outline" cx="102" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
+              <ellipse class="body-outline" cx="102" cy="85" rx="8" ry="22" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 다리 왼쪽 -->
-              <path class="body-outline" d="M52 172 L44 172 L40 192 L44 198 L56 198 L58 192 L54 172 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
+              <path class="body-outline" d="M52 172 L44 172 L40 192 L44 198 L56 198 L58 192 L54 172 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 다리 오른쪽 -->
-              <path class="body-outline" d="M68 172 L76 172 L80 192 L76 198 L64 198 L62 192 L66 172 Z" fill="url(#bodyGrad)" stroke="#A8D0F0" stroke-width="1"/>
+              <path class="body-outline" d="M68 172 L76 172 L80 192 L76 198 L64 198 L62 192 L66 172 Z" fill="url(#bodyGrad)" stroke="#C4A882" stroke-width="1"/>
               <!-- 클릭 영역 (data-part: 부위명) - 가슴/위장 분리 -->
               <ellipse class="body-part" data-part="머리" cx="60" cy="20" rx="16" ry="18"/>
               <ellipse class="body-part" data-part="가슴" cx="60" cy="68" rx="24" ry="20"/>
