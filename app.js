@@ -283,7 +283,8 @@ const PILL_API = 'https://apis.data.go.kr/1471000/DrbPilDrugInfoService/getDrbPi
 const PHARMACY_API = 'https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyListInfoInqire';
 const CORS_PROXIES = [
   (u) => 'https://corsproxy.io/?url=' + encodeURIComponent(u),
-  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u)
+  (u) => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  (u) => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u)
 ];
 
 // HTTP 이미지 URL → HTTPS 변환 (mixed content 방지)
@@ -298,7 +299,7 @@ function ensureHttpsImageUrl(url) {
 async function tryImageProxyFallback(img, imgUrl, wrap, alt, className) {
   const placeholder = (className === 'drug-card-image' || className === 'pill-image')
     ? '<span class="' + (className === 'pill-image' ? 'pill-image-placeholder' : 'drug-card-image-placeholder') + '">&#128203;</span>'
-    : '';
+    : (className === 'drug-image' ? '<span class="drug-image-placeholder">&#128203;</span>' : '');
   const setFailed = () => {
     if (wrap) wrap.innerHTML = placeholder;
     else img.style.display = 'none';
@@ -403,11 +404,13 @@ async function fetchEyakImageForPill(itemName, itemSeq) {
     if (itemSeq) {
       const url = `${EYAK_API}?serviceKey=${encodeURIComponent(apiKey)}&itemSeq=${encodeURIComponent(itemSeq)}&numOfRows=1&pageNo=1&type=json`;
       const items = await fetchWithProxy(url);
-      if (items && items[0]?.itemImage) return ensureHttpsImageUrl((items[0].itemImage || '').trim());
+      const img = (items && items[0]) ? (items[0].itemImage || items[0].ITEM_IMAGE || '').trim() : '';
+      if (img) return ensureHttpsImageUrl(img);
     }
     if (itemName) {
       const items = await fetchEyakApi(itemName);
-      if (items && items[0]?.itemImage) return ensureHttpsImageUrl((items[0].itemImage || '').trim());
+      const img = (items && items[0]) ? (items[0].itemImage || items[0].ITEM_IMAGE || '').trim() : '';
+      if (img) return ensureHttpsImageUrl(img);
     }
   }
   if (pillKey && itemName) {
@@ -985,13 +988,16 @@ async function loadDetailImage() {
   try {
     const imgUrl = await fetchEyakImageForPill(name, seq);
     if (imgUrl) {
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'drug-image-wrap';
       const img = document.createElement('img');
       img.src = ensureHttpsImageUrl(imgUrl);
       img.alt = name;
       img.className = 'drug-image';
       img.referrerPolicy = 'no-referrer';
-      img.onerror = () => { tryImageProxyFallback(img, imgUrl, null, name, 'drug-image'); };
-      wrap.replaceWith(img);
+      img.onerror = () => { tryImageProxyFallback(img, imgUrl, imgWrap, name, 'drug-image'); };
+      imgWrap.appendChild(img);
+      wrap.replaceWith(imgWrap);
     }
   } catch (_) {}
 }
@@ -1008,7 +1014,7 @@ function showDetail(source, drug) {
 
   if (source === 'eyak') {
     const d = drug;
-    const imgHtml = d.itemImage ? `<img src="${ensureHttpsImageUrl(d.itemImage)}" alt="${d.itemName}" class="drug-image" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.itemName || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
+    const imgHtml = d.itemImage ? `<div class="drug-image-wrap"><img src="${ensureHttpsImageUrl(d.itemImage)}" alt="${(d.itemName || '').replace(/"/g, '&quot;')}" class="drug-image" referrerpolicy="no-referrer" onerror="typeof tryImageProxyFallback==='function'&&tryImageProxyFallback(this,this.src,this.parentElement,this.alt,'drug-image')"></div>` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.itemName || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     const sections = [
       { title: '효능·효과', data: d.efcyQesitm },
       { title: '사용법', data: d.useMethodQesitm },
@@ -1040,7 +1046,7 @@ function showDetail(source, drug) {
     loadDetailImage();
   } else if (source === 'korean') {
     const d = drug;
-    const imgHtml = d.image ? `<img src="${ensureHttpsImageUrl(d.image)}" alt="${d.name}" class="drug-image" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.name || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
+    const imgHtml = d.image ? `<div class="drug-image-wrap"><img src="${ensureHttpsImageUrl(d.image)}" alt="${(d.name || '').replace(/"/g, '&quot;')}" class="drug-image" referrerpolicy="no-referrer" onerror="typeof tryImageProxyFallback==='function'&&tryImageProxyFallback(this,this.src,this.parentElement,this.alt,'drug-image')"></div>` : '<div class="drug-image-placeholder-wrap" data-fetch-img="1" data-name="' + (d.name || '').replace(/"/g, '&quot;') + '" data-seq="' + (d.itemSeq || '') + '"><span class="drug-image-loading">&#128203;</span></div>';
     let ext = d.efcyQesitm || d.useMethodQesitm || d.atpnQesitm || d.intrcQesitm || d.seQesitm || d.depositMethodQesitm ? d : null;
     if (!ext && typeof DRUG_EXTENDED_INFO !== 'undefined') {
       const extInfo = DRUG_EXTENDED_INFO[d.name] || DRUG_EXTENDED_INFO[d.ingredient];

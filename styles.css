@@ -514,7 +514,9 @@ body {
 }
 
 .detail-section p { font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); }
-.detail-content .drug-image { max-width: 120px; max-height: 120px; object-fit: contain; margin-bottom: 1rem; border-radius: var(--radius); }
+.detail-content .drug-image-wrap { margin-bottom: 1rem; }
+.detail-content .drug-image { max-width: 120px; max-height: 120px; object-fit: contain; border-radius: var(--radius); }
+.detail-content .drug-image-placeholder { font-size: 3rem; opacity: 0.5; display: inline-block; }
 .detail-content .drug-image-placeholder-wrap {
   width: 120px; height: 120px; display: flex; align-items: center; justify-content: center;
   background: var(--bg); border-radius: var(--radius); margin-bottom: 1rem;
