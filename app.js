@@ -863,6 +863,28 @@ searchBtn.addEventListener('click', () => {
   const q = searchInput.value.trim();
   if (q) { saveRecentSearch(q); searchDrugs(q); }
 });
+
+// 몸 부위별 증상 검색 (버튼 + SVG 영역)
+function initBodyPartSearch() {
+  const runSearch = (term) => {
+    if (!term) return;
+    searchInput.value = term;
+    saveRecentSearch(term);
+    searchDrugs(term);
+  };
+  document.querySelectorAll('.body-part-btn').forEach(btn => {
+    btn.addEventListener('click', () => runSearch(btn.dataset.term));
+  });
+  document.querySelectorAll('.body-part').forEach(el => {
+    el.addEventListener('click', () => runSearch(el.dataset.term));
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initBodyPartSearch);
+} else {
+  initBodyPartSearch();
+}
+
 searchInput.addEventListener('keypress', e => {
   if (e.key === 'Enter') {
     const q = searchInput.value.trim();
