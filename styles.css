@@ -179,8 +179,8 @@ body {
   margin-bottom: 1rem;
 }
 .body-svg {
-  width: 100px;
-  height: 157px;
+  width: 90px;
+  height: 150px;
   max-width: 100%;
 }
 .body-outline {
@@ -225,6 +225,40 @@ body {
 }
 .body-part-btn[aria-pressed="true"],
 .body-part-btn.highlight {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.body-part-sub {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.body-part-sub.hidden {
+  display: none !important;
+}
+.body-part-sub-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+.body-part-sub-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.body-part-sub-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.body-part-sub-btn:hover {
   background: var(--primary-light);
   color: var(--primary);
   border-color: var(--primary);

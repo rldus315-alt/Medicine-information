@@ -879,32 +879,98 @@ searchBtn.addEventListener('click', () => {
   if (q) { saveRecentSearch(q); searchDrugs(q); }
 });
 
+// 몸 부위별 하위 증상 (부위 → [ { label, term } ])
+const BODY_PART_SYMPTOMS = {
+  '머리': [
+    { label: '두통', term: '두통' },
+    { label: '해열', term: '해열' },
+    { label: '어지러움', term: '어지러움' },
+    { label: '편두통', term: '편두통' },
+    { label: '감기', term: '감기' },
+    { label: '코막힘', term: '코막힘' },
+  ],
+  '가슴': [
+    { label: '기침', term: '기침' },
+    { label: '가슴통증', term: '가슴통증' },
+    { label: '천식', term: '천식' },
+    { label: '기관지', term: '기관지' },
+    { label: '가래', term: '가래' },
+  ],
+  '위장': [
+    { label: '소화불량', term: '소화불량' },
+    { label: '위통', term: '위통' },
+    { label: '구토', term: '구토' },
+    { label: '설사', term: '설사' },
+    { label: '변비', term: '변비' },
+    { label: '식욕부진', term: '식욕부진' },
+  ],
+  '관절': [
+    { label: '관절통', term: '관절통' },
+    { label: '관절염', term: '관절염' },
+    { label: '류머티스', term: '류머티스' },
+    { label: '요통', term: '요통' },
+  ],
+  '팔': [
+    { label: '근육통', term: '근육통' },
+    { label: '어깨통증', term: '어깨통증' },
+    { label: '염좌', term: '염좌' },
+  ],
+  '다리': [
+    { label: '근육통', term: '근육통' },
+    { label: '신경통', term: '신경통' },
+    { label: '다리통증', term: '다리통증' },
+  ],
+};
+
 // 몸 부위별 증상 검색 (버튼 + SVG 영역)
 function initBodyPartSearch() {
   const hintEl = document.getElementById('bodyPartHint');
-  const showHint = (label, term) => {
+  const subPanel = document.getElementById('bodyPartSub');
+  const subLabel = document.getElementById('bodyPartSubLabel');
+  const subButtons = document.getElementById('bodyPartSubButtons');
+
+  const showHint = (part) => {
     if (hintEl) {
-      hintEl.textContent = label ? `${label} → ${term} 검색` : '부위에 마우스를 올려보세요';
-      hintEl.classList.toggle('active', !!label);
+      hintEl.textContent = part ? `${part} - 클릭하여 증상 선택` : '부위에 마우스를 올려보세요';
+      hintEl.classList.toggle('active', !!part);
     }
   };
-  const runSearch = (term) => {
-    if (!term) return;
-    searchInput.value = term;
-    saveRecentSearch(term);
-    searchDrugs(term);
+
+  const showSubPanel = (part) => {
+    const symptoms = BODY_PART_SYMPTOMS[part];
+    if (!symptoms || !subPanel || !subButtons) return;
+    subLabel.textContent = `${part} - 증상 선택`;
+    subButtons.innerHTML = symptoms.map(s => `<button type="button" class="body-part-sub-btn" data-term="${(s.term || '').replace(/"/g, '&quot;')}">${s.label}</button>`).join('');
+    subPanel.classList.remove('hidden');
+    subButtons.querySelectorAll('.body-part-sub-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const term = btn.dataset.term;
+        if (term) {
+          searchInput.value = term;
+          saveRecentSearch(term);
+          searchDrugs(term);
+        }
+        subPanel.classList.add('hidden');
+      });
+    });
   };
+
+  const onPartClick = (part) => {
+    if (!part) return;
+    showSubPanel(part);
+  };
+
   document.querySelectorAll('.body-part-btn').forEach(btn => {
-    btn.addEventListener('click', () => runSearch(btn.dataset.term));
-    btn.addEventListener('mouseenter', () => showHint(btn.textContent.trim(), btn.dataset.term || ''));
-    btn.addEventListener('mouseleave', () => showHint('', ''));
+    btn.addEventListener('click', () => onPartClick(btn.dataset.part));
+    btn.addEventListener('mouseenter', () => showHint(btn.dataset.part || ''));
+    btn.addEventListener('mouseleave', () => showHint(''));
   });
   document.querySelectorAll('.body-part').forEach(el => {
-    el.addEventListener('click', () => runSearch(el.dataset.term));
-    el.addEventListener('mouseenter', () => showHint(el.dataset.label || '', el.dataset.term || ''));
-    el.addEventListener('mouseleave', () => showHint('', ''));
+    el.addEventListener('click', () => onPartClick(el.dataset.part));
+    el.addEventListener('mouseenter', () => showHint(el.dataset.part || ''));
+    el.addEventListener('mouseleave', () => showHint(''));
   });
-  document.querySelector('.body-diagram')?.addEventListener('mouseleave', () => showHint('', ''));
+  document.querySelector('.body-diagram')?.addEventListener('mouseleave', () => showHint(''));
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initBodyPartSearch);
